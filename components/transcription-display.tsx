@@ -9,7 +9,7 @@ interface TranscriptionDisplayProps {
   isTranscribing: boolean;
 }
 
-export function TranscriptionDisplay({ transcription, isTranscribing }: TranscriptionDisplayProps) {
+export function   TranscriptionDisplay({ transcription, isTranscribing }: TranscriptionDisplayProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,23 +47,10 @@ export function TranscriptionDisplay({ transcription, isTranscribing }: Transcri
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-2 mb-2">
-            {isTranscribing && (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                <Badge variant="default" className="animate-pulse">
-                  Transcribing...
-                </Badge>
-              </>
-            )}
-            {transcription && !isTranscribing && (
-              <Badge variant="outline">Transcription Complete</Badge>
-            )}
-          </div>
 
           <div 
             ref={scrollRef}
-            className="h-[600px] overflow-y-auto space-y-4 p-4 bg-muted/30 rounded-lg border"
+            className="space-y-4 p-4 rounded-lg border"
           >
             {formattedTranscription.map((item, index) => (
               <div key={index} className="space-y-1">
@@ -71,7 +58,7 @@ export function TranscriptionDisplay({ transcription, isTranscribing }: Transcri
                   <Badge variant="secondary" className="font-mono text-xs shrink-0">
                     {item.timestamp.replace('[', '').replace(']', '')}
                   </Badge>
-                  <p className="text-sm leading-relaxed flex-1">
+                  <p className="text-sm leading-relaxed flex-1 text-white whitespace-pre-wrap">
                     {item.text.trim()}
                   </p>
                 </div>
