@@ -1,7 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
+import { 
+    checkRateLimit, 
+    getClientIdentifier, 
+    createRateLimitHeaders,
+    RATE_LIMIT_TIERS 
+} from '@/lib/rate-limiter';
 
 export async function POST(request: NextRequest) {
+    const clientIp = getClientIdentifier(request);
+    
+    // Apply standard rate limiting for PDF generation
+    const rateLimitResult = checkRateLimit(
+        clientIp, 
+        'generate-pdf', 
+        RATE_LIMIT_TIERS.STANDARD
+    );
+    
+    if (!rateLimitResult.success) {
+        return NextResponse.json(
+            {
+                error: 'Too many requests',
+                message: `Rate limit exceeded. Please try again in ${rateLimitResult.retryAfter} seconds.`,
+                retryAfter: rateLimitResult.retryAfter,
+            },
+            {
+                status: 429,
+                headers: createRateLimitHeaders(rateLimitResult),
+            }
+        );
+    }
+
     try {
         const { html, title } = await request.json();
 
@@ -267,12 +296,14 @@ export async function POST(request: NextRequest) {
 
         await browser.close();
 
-        // Return PDF as response
+        // Return PDF as response with rate limit headers
+        const rateLimitHeaders = createRateLimitHeaders(rateLimitResult);
         return new NextResponse(pdfBuffer, {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
                 'Content-Disposition': `attachment; filename="${title || 'resolution'}.pdf"`,
+                ...rateLimitHeaders,
             },
         });
     } catch (error) {

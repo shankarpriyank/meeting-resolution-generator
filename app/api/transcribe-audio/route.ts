@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { 
+    checkRateLimit, 
+    getClientIdentifier, 
+    createRateLimitHeaders,
+    RATE_LIMIT_TIERS 
+} from '@/lib/rate-limiter';
+import { recordAPICall, calculateCost } from '@/lib/api-monitoring';
 
 const formatTimestamp = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -8,6 +15,31 @@ const formatTimestamp = (seconds: number): string => {
 };
 
 export async function POST(request: NextRequest) {
+    const clientIp = getClientIdentifier(request);
+    
+    // Apply strict rate limiting for AI endpoints
+    const rateLimitResult = checkRateLimit(
+        clientIp, 
+        'transcribe-audio', 
+        RATE_LIMIT_TIERS.AI_STRICT
+    );
+    
+    if (!rateLimitResult.success) {
+        return NextResponse.json(
+            {
+                error: 'Too many requests',
+                message: `Rate limit exceeded. Please try again in ${rateLimitResult.retryAfter} seconds.`,
+                retryAfter: rateLimitResult.retryAfter,
+            },
+            {
+                status: 429,
+                headers: createRateLimitHeaders(rateLimitResult),
+            }
+        );
+    }
+
+    const startTime = Date.now();
+
     try {
         const formData = await request.formData();
         const file = formData.get('file') as File;
@@ -33,8 +65,23 @@ export async function POST(request: NextRequest) {
             body: transcriptionFormData,
         });
 
+        const latencyMs = Date.now() - startTime;
+
         if (!response.ok) {
             const errorText = await response.text();
+            
+            // Record failed API call
+            recordAPICall({
+                endpoint: 'transcribe-audio',
+                provider: 'openai',
+                model: 'whisper-1',
+                status: 'error',
+                latencyMs,
+                errorMessage: `OpenAI API error: ${response.statusText}`,
+                clientIp,
+                metadata: { fileSize: file.size, fileName: file.name },
+            });
+
             return NextResponse.json(
                 { error: `OpenAI API error: ${response.statusText}`, details: errorText },
                 { status: response.status }
@@ -42,6 +89,26 @@ export async function POST(request: NextRequest) {
         }
 
         const data = await response.json();
+
+        // Calculate estimated cost based on audio duration (Whisper charges per minute)
+        const audioDurationMinutes = data.duration ? data.duration / 60 : 0;
+        const estimatedCost = audioDurationMinutes * 0.006; // $0.006 per minute
+
+        // Record successful API call
+        recordAPICall({
+            endpoint: 'transcribe-audio',
+            provider: 'openai',
+            model: 'whisper-1',
+            status: 'success',
+            latencyMs,
+            estimatedCost,
+            clientIp,
+            metadata: { 
+                fileSize: file.size, 
+                fileName: file.name,
+                audioDurationSeconds: data.duration,
+            },
+        });
 
         let formattedTranscription = '';
         if (data.segments && data.segments.length > 0) {
@@ -55,11 +122,27 @@ export async function POST(request: NextRequest) {
             formattedTranscription = data.text || '';
         }
 
-        return NextResponse.json({ 
-            transcription: formattedTranscription,
-            rawData: data 
-        });
+        return NextResponse.json(
+            { 
+                transcription: formattedTranscription,
+                rawData: data 
+            },
+            { headers: createRateLimitHeaders(rateLimitResult) }
+        );
     } catch (error: any) {
+        const latencyMs = Date.now() - startTime;
+        
+        // Record failed API call
+        recordAPICall({
+            endpoint: 'transcribe-audio',
+            provider: 'openai',
+            model: 'whisper-1',
+            status: 'error',
+            latencyMs,
+            errorMessage: error.message || 'Unknown error',
+            clientIp,
+        });
+
         console.error('Transcription error:', error);
         return NextResponse.json(
             { error: error.message || 'Failed to transcribe audio' },

@@ -1,11 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { 
+    checkRateLimit, 
+    getClientIdentifier, 
+    createRateLimitHeaders,
+    RATE_LIMIT_TIERS 
+} from '@/lib/rate-limiter';
+import { recordAPICall, calculateCost } from '@/lib/api-monitoring';
 
 const anthropic = new Anthropic({
   apiKey: process.env.NEXT_PUBLIC_CLAUDE_API_KEY,
 });
 
 export async function POST(request: NextRequest) {
+  const clientIp = getClientIdentifier(request);
+  
+  // Apply strict rate limiting for AI endpoints
+  const rateLimitResult = checkRateLimit(
+    clientIp, 
+    'generate-resolution', 
+    RATE_LIMIT_TIERS.AI_STRICT
+  );
+  
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      {
+        error: 'Too many requests',
+        message: `Rate limit exceeded. Please try again in ${rateLimitResult.retryAfter} seconds.`,
+        retryAfter: rateLimitResult.retryAfter,
+      },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(rateLimitResult),
+      }
+    );
+  }
+
+  const startTime = Date.now();
+  
   try {
     const { transcription, metadata } = await request.json();
 
@@ -89,9 +121,27 @@ Extract all relevant information from the transcription. If specific information
       ],
     });
 
+    const latencyMs = Date.now() - startTime;
     const resolutionText = message.content[0].type === 'text' 
       ? message.content[0].text 
       : '';
+
+    // Record successful API call with token usage
+    const inputTokens = message.usage?.input_tokens || 0;
+    const outputTokens = message.usage?.output_tokens || 0;
+    const estimatedCost = calculateCost('claude-3-haiku-20240307', inputTokens, outputTokens);
+
+    recordAPICall({
+      endpoint: 'generate-resolution',
+      provider: 'anthropic',
+      model: 'claude-3-haiku-20240307',
+      status: 'success',
+      latencyMs,
+      inputTokens,
+      outputTokens,
+      estimatedCost,
+      clientIp,
+    });
 
     console.log('Generated Resolution Text:', resolutionText);
 
@@ -109,8 +159,24 @@ Extract all relevant information from the transcription. If specific information
       resolution = { rawText: resolutionText };
     }
 
-    return NextResponse.json({ resolution });
+    return NextResponse.json(
+      { resolution },
+      { headers: createRateLimitHeaders(rateLimitResult) }
+    );
   } catch (error: any) {
+    const latencyMs = Date.now() - startTime;
+    
+    // Record failed API call
+    recordAPICall({
+      endpoint: 'generate-resolution',
+      provider: 'anthropic',
+      model: 'claude-3-haiku-20240307',
+      status: 'error',
+      latencyMs,
+      errorMessage: error.message || 'Unknown error',
+      clientIp,
+    });
+
     console.error('Error generating resolution:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to generate resolution' },
