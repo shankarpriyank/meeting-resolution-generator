@@ -1,139 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, ArrowRight } from 'lucide-react';
+import { FileText, ArrowRight, Loader2 } from 'lucide-react';
 
 import MeetingCaptureHomeNavbar from '@/components/meeting-capture-home/navbar';
 import { AudioUpload } from '@/components/meeting-capture-home/upload';
 import { MeetingMetadataForm } from '@/components/meeting-capture-home/meeting-metadata-form';
 import { ConnectPlatform } from '@/components/meeting-capture-home/connect-platform';
-import { ActiveMeetings } from '@/components/meeting-capture-home/meetings/index';
 import ResolutionView from '@/components/resolution-view';
+import { convertToHTML } from '@/lib/resolution-html';
 
 
 
 export default function TranscribePage() {
+    const searchParams = useSearchParams();
+    const meetingId = searchParams.get('id');
+
     const [audioFile, setAudioFile] = useState<File | null>(null);
+    const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [isTranscribing, setIsTranscribing] = useState(false);
     const [transcriptionProgress, setTranscriptionProgress] = useState(0);
-    const [transcription, setTranscription] = useState<string>(`00:00:00
-Welcome to the podcast.
-
-00:00:01
-I'm your host, Jaden Schafer.
-
-00:00:02
-Today on the show, I wanna talk about
-
-00:00:04
-a really interesting company called HumansAnd.
-
-00:00:06
-And I think the reason why a lot of people
-
-00:00:08
-are talking about them is that right now
-
-00:00:10
-we have all of these different chatbots
-
-00:00:12
-that have gotten really good at answering questions,
-
-00:00:14
-they're really good at summarizing documents
-
-00:00:15
-or solving equations, right?
-
-00:00:16
-All of these types of things we think about all the time.
-
-00:00:19
-But for all, you know, for how intelligent
-
-00:00:21
-and how smart they are, most of them still act
-
-00:00:24
-like they're kind of this solo assistant, right?
-
-00:00:26
-They're optimized for one user
-
-00:00:28
-and for they're doing one prompt at a time.
-
-00:00:30
-What they're not doing and what they're not very good at
-
-00:00:33
-is some of these really messy, more human kind of work
-
-00:00:36
-of collaboration things that we do.
-
-00:00:38
-So whether that's like, you know, coordinating groups
-
-00:00:40
-with a bunch of conflicting priorities
-
-00:00:42
-or if they're tracking decisions over weeks or months
-
-00:00:44
-or if they're trying to help teams stay aligned
-
-00:00:46
-or goals and, you know, all of these goals
-
-00:00:48
-and people and information is all kind of shifting around.
-
-00:00:50
-This is what AI chatbots are struggling with today.
-
-00:00:53
-And so HumansAnd is building a solution to this.
-
-00:00:56
-I'm gonna get into all of this on the podcast today.
-
-00:00:58
-But before we do, I wanted to mention the new feature
-
-00:01:01
-we've just added to AI Box that I'm super excited about.
-
-00:01:03
-And that is file uploads for our builder.
-
-00:01:05
-So we have a Vibe Builder tool.
-
-00:01:08
-If you've never built a software before
-
-00:01:10
-or never built a tool before, you can go to aibox.ai,
-
-00:01:13
-describe what you're trying to build on our builder
-
-00:01:15
-and our AI will automatically link together
-
-00:01:18
-different AI models and fill out the prompts.
-
-00:01:20
-And we've been doing this for a while.`);
+    const [transcription, setTranscription] = useState<string>(``);
     const [resolution, setResolution] = useState<string>('');
     const [isGeneratingResolution, setIsGeneratingResolution] = useState(false);
     const [showResolutionPreview, setShowResolutionPreview] = useState(false);
+    const [meetingIdState, setMeetingIdState] = useState<string | null>(meetingId);
+    const [meetingStatus, setMeetingStatus] = useState<string>('DRAFT');
+    const [isProcessingMeeting, setIsProcessingMeeting] = useState(false);
     const [meetingMetadata, setMeetingMetadata] = useState({
         date: '',
         time: '',
@@ -143,11 +39,67 @@ And we've been doing this for a while.`);
         meetingTitle: '',
     });
 
+    // Load meeting data if ID is present
+    useEffect(() => {
+        if (meetingId) {
+            loadMeetingData(meetingId);
+        }
+    }, [meetingId]);
+
+    const loadMeetingData = async (id: string) => {
+        try {
+            const response = await fetch(`/api/meetings/${id}`);
+            if (response.ok) {
+                const data = await response.json();
+                const meeting = data.meeting;
+
+                // Prefill all data
+                setMeetingMetadata({
+                    date: meeting.date || '',
+                    time: meeting.time || '',
+                    entityName: meeting.entity || '',
+                    jurisdiction: meeting.jurisdiction || '',
+                    meetingType: meeting.meetingType || '',
+                    meetingTitle: meeting.title || '',
+                });
+
+                if (meeting.transcript) {
+                    setTranscription(meeting.transcript);
+                }
+
+                if (meeting.resolution_html) {
+                    setResolution(meeting.resolution_html);
+                }
+
+                if (meeting.file_link) {
+                    setAudioUrl(meeting.file_link);
+                }
+
+                // Set meeting status
+                if (meeting.status) {
+                    setMeetingStatus(meeting.status);
+                }
+
+                // If resolution exists, show preview
+                if (meeting.resolution_html || meeting.resolution) {
+                    setShowResolutionPreview(true);
+                }
+
+                setMeetingIdState(id);
+            } else {
+                console.error('Failed to load meeting:', await response.text());
+            }
+        } catch (error) {
+            console.error('Error loading meeting:', error);
+        }
+    };
+
     const handleAudioUpload = async (file: File | null) => {
         setAudioFile(file);
     };
 
     const handleProcessMeeting = async () => {
+        setIsProcessingMeeting(true);
         if (!audioFile) {
             alert('Please upload an audio file first');
             return;
@@ -158,22 +110,50 @@ And we've been doing this for a while.`);
         //     return;
         // }
 
+        // We'll keep track of the uploaded URL locally so we can pass it through
+        let uploadedUrl: string | null = null;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', audioFile);
+
+            const uploadResponse = await fetch('/api/upload-audio', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (uploadResponse.ok) {
+                const uploadData = await uploadResponse.json();
+                if (uploadData?.url) {
+                    uploadedUrl = uploadData.url;
+                    setAudioUrl(uploadedUrl);
+                }
+            } else {
+                const errorData = await uploadResponse.json().catch(() => null);
+                console.error('Audio upload failed:', errorData || uploadResponse.statusText);
+            }
+        } catch (error) {
+            console.error('Audio upload error:', error);
+        }
+
         setIsTranscribing(true);
         setTranscription('');
         setTranscriptionProgress(0);
         setShowResolutionPreview(true);
+        setIsProcessingMeeting(false);
 
         try {
-            await transcribeAudio(audioFile);
+            await transcribeAudio(audioFile, uploadedUrl);
         } catch (error) {
             console.error('Transcription error:', error);
             setTranscription('Error: Failed to transcribe audio. Please try again.');
             setIsTranscribing(false);
             setTranscriptionProgress(0);
+            setIsProcessingMeeting(false);
         }
     };
 
-    const transcribeAudio = async (file: File) => {
+    const transcribeAudio = async (file: File, fileLinkOverride?: string | null) => {
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -212,14 +192,17 @@ And we've been doing this for a while.`);
             setIsTranscribing(false);
 
             // Automatically generate resolution after transcription completes
-            await generateResolution(formattedTranscription);
+            await generateResolution(formattedTranscription, fileLinkOverride);
         } catch (error) {
             console.error('Transcription error:', error);
             throw error;
         }
     };
 
-    const generateResolution = async (transcriptionText?: string) => {
+    const generateResolution = async (
+        transcriptionText?: string,
+        fileLinkOverride?: string | null
+    ) => {
         const textToUse = transcriptionText || transcription;
 
         if (!textToUse) {
@@ -253,7 +236,21 @@ And we've been doing this for a while.`);
 
             const data = await response.json();
             console.log(data)
-            setResolution(data.resolution);
+
+            // Stringify the resolution object for state and saving
+            const resolutionString = typeof data.resolution === 'string'
+                ? data.resolution
+                : JSON.stringify(data.resolution);
+
+
+            setResolution(convertToHTML(data.resolution));
+
+            // Create or update meeting entry after resolution is generated
+            await saveMeetingToDatabase(
+                convertToHTML(data.resolution),
+                textToUse,
+                fileLinkOverride ?? audioUrl
+            );
         } catch (error) {
             console.error('Error generating resolution:', error);
             alert('Failed to generate resolution. Please try again.');
@@ -262,13 +259,148 @@ And we've been doing this for a while.`);
         }
     };
 
-    const handleEditResolution = (editedResolution: string) => {
-        setResolution(editedResolution);
+    const saveMeetingToDatabase = async (
+        resolutionData: string,
+        transcriptOverride?: string,
+        fileLinkOverride?: string | null
+    ) => {
+        try {
+
+            const duration = audioFile ? Math.round((audioFile.size / 1000) / 60) : 0; // Rough estimate
+            const transcriptToSave = transcriptOverride ?? transcription;
+            const fileLinkToSave = fileLinkOverride ?? audioUrl ?? '';
+
+            if (meetingIdState) {
+                // Update existing meeting
+                const response = await fetch(`/api/meetings/${meetingIdState}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        resolution_html: resolutionData,
+                        resolution: {},
+                        status: 'DRAFT',
+                    }),
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to update meeting:', await response.text());
+                } else {
+                    console.log('Meeting updated successfully');
+                }
+            } else {
+                // Create new meeting
+                const response = await fetch('/api/meetings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: meetingMetadata.meetingTitle || 'Untitled Meeting',
+                        date: meetingMetadata.date,
+                        time: meetingMetadata.time,
+                        entity: meetingMetadata.entityName,
+                        jurisdiction: meetingMetadata.jurisdiction,
+                        duration: duration,
+                        resolution: {},
+                        transcript: transcriptToSave,
+                        resolution_html: resolutionData,
+                        file_link: fileLinkToSave,
+                        status: 'DRAFT',
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setMeetingIdState(data.meeting.id);
+                    console.log('Meeting created successfully:', data.meeting.id);
+                } else {
+                    console.error('Failed to create meeting:', await response.text());
+                }
+            }
+        } catch (error) {
+            console.error('Error saving meeting to database:', error);
+        }
     };
 
-    const handleAcceptResolution = () => {
+    const handleEditResolution = async (editedResolution: string) => {
+        setResolution(editedResolution);
+
+        // Update meeting in database when resolution is edited
+        if (meetingIdState) {
+            try {
+                let resolutionHtml = '';
+                let resolutionJson = {};
+
+                try {
+                    const parsed = JSON.parse(editedResolution);
+                    resolutionJson = parsed;
+
+                    // Extract HTML from _html field (this is what the editor stores)
+                    resolutionHtml = parsed._html || parsed.html || '';
+
+                    // If no HTML stored, generate it from the data
+                    if (!resolutionHtml && parsed.entityName) {
+                        resolutionHtml = convertToHTML(parsed);
+                    } else if (!resolutionHtml) {
+                        resolutionHtml = convertToHTML(parsed);
+                    }
+                } catch {
+                    // If parsing fails, assume it's already HTML
+                    resolutionHtml = editedResolution;
+                }
+
+                const response = await fetch(`/api/meetings/${meetingIdState}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        resolution_html: resolutionHtml,
+                        resolution: resolutionJson,
+                    }),
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to update resolution:', await response.text());
+                }
+            } catch (error) {
+                console.error('Error updating resolution:', error);
+            }
+        }
+    };
+
+    const handleAcceptResolution = async () => {
         console.log('Resolution accepted:', resolution);
-        alert('Resolution accepted! In a production app, this would save to your database.');
+
+        // Update meeting status to COMPLETED
+        if (meetingIdState) {
+            try {
+                const response = await fetch(`/api/meetings/${meetingIdState}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        status: 'COMPLETED',
+                    }),
+                });
+
+                if (response.ok) {
+                    setMeetingStatus('COMPLETED');
+                    alert('Resolution accepted and saved!');
+                } else {
+                    console.error('Failed to update meeting status:', await response.text());
+                    alert('Failed to save resolution. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error accepting resolution:', error);
+                alert('Failed to save resolution. Please try again.');
+            }
+        } else {
+            alert('Meeting ID not found. Please try again.');
+        }
     };
 
     const handleGenerateAnother = () => {
@@ -277,6 +409,7 @@ And we've been doing this for a while.`);
         setTranscription('');
         setTranscriptionProgress(0);
         setAudioFile(null);
+        setAudioUrl(null);
     };
 
     const handleMetadataSubmit = (metadata: { date: string; time: string; entity: string; jurisdiction: string; meetingType: string; meetingTitle: string }) => {
@@ -288,11 +421,7 @@ And we've been doing this for a while.`);
             meetingType: metadata.meetingType,
             meetingTitle: metadata.meetingTitle,
         });
-        console.log('Meeting metadata saved:', metadata);
     };
-
-    console.log('Meeting Metadata:', meetingMetadata);
-    console.log('Audio file:', audioFile);
 
     // Format date from metadata
     const formatDate = (date: string, time?: string) => {
@@ -357,12 +486,21 @@ And we've been doing this for a while.`);
                             <Button
                                 onClick={handleProcessMeeting}
                                 size="lg"
-                                disabled={!audioFile || !meetingMetadata.entityName || !meetingMetadata.meetingType || !meetingMetadata.meetingTitle || !meetingMetadata.date}
-                                className="px-8 py-8 cursor-pointer text-white"
+                                disabled={!audioFile || !meetingMetadata.entityName || !meetingMetadata.meetingType || !meetingMetadata.meetingTitle || !meetingMetadata.date || isProcessingMeeting}
+                                className="px-8 py-8 cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <FileText className="mr-2 h-5 w-5" />
-                                Process Meeting & Generate Resolution
-                                <ArrowRight className="ml-2 h-5 w-5" />
+                                {isProcessingMeeting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FileText className="mr-2 h-5 w-5" />
+                                        Process Meeting & Generate Resolution
+                                        <ArrowRight className="ml-2 h-5 w-5" />
+                                    </>
+                                )}
                             </Button>
                         </div>
                     </div>
@@ -370,6 +508,7 @@ And we've been doing this for a while.`);
             ) : (
                 <ResolutionView
                     audioBlob={audioFile}
+                    audioUrl={audioUrl || undefined}
                     transcription={transcription}
                     isTranscribing={isTranscribing}
                     transcriptionProgress={transcriptionProgress}
@@ -383,6 +522,7 @@ And we've been doing this for a while.`);
                     onAccept={handleAcceptResolution}
                     onAddAnother={handleGenerateAnother}
                     metadata={meetingMetadata}
+                    meetingStatus={meetingStatus}
                 />
             )}
             {/* <ResolutionView
@@ -392,7 +532,7 @@ And we've been doing this for a while.`);
                 transcriptionProgress={transcriptionProgress}
                 meetingTitle={meetingMetadata.meetingTitle || meetingMetadata.meetingType || 'Q4 2024 Board Meeting'}
                 entity={meetingMetadata.entityName || 'Acme Corporation Inc.'}
-                date={formatDate(meetingMetadata.dateTime)}
+                date={formatDate(meetingMetadata.date, meetingMetadata.time)}
                 jurisdiction={meetingMetadata.jurisdiction || 'Delaware, USA'}
                 resolution={resolution}
                 isGeneratingResolution={isGeneratingResolution}

@@ -26,6 +26,7 @@ interface ResolutionData {
     meetingLocation?: string;
     meetingDate?: string;
     meetingTime?: string;
+    meetingType?: string;
     directors?: Array<{ name: string; position: string }>;
     attendees?: Array<{ name: string; company: string }>;
     chairperson?: string;
@@ -34,7 +35,8 @@ interface ResolutionData {
     businessPurpose?: string;
     agreementType?: string;
     counterpartyName?: string;
-    resolutions?: Array<{ section: string; text: string }>;
+    approvalOfAgreement?: Array<{ section: string; text: string }>;
+    furtherAndPriorActs?: Array<{ section: string; text: string }>;
     filingInstructions?: string;
     closingStatement?: string;
 }
@@ -54,162 +56,6 @@ interface ResolutionPreviewContentProps {
         dateTime?: string;
     };
 }
-
-// Convert resolution data to HTML document
-const convertToHTML = (data: ResolutionData): string => {
-    return `
-        <div class="resolution-document">
-            <div class="text-center mb-8">
-                <h1 class="text-2xl font-bold mb-2">${data.resolutionTitle || 'BOARD RESOLUTION'}</h1>
-                <p class="text-lg mb-1">${data.entityName || 'Entity Name'}</p>
-                <p class="text-sm text-gray-400">${data.meetingDate || 'Date'}</p>
-            </div>
-            
-            <div class="border-t border-b border-gray-700 py-4 mb-6">
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <p><strong>Location:</strong> ${data.meetingLocation || '[To be determined]'}</p>
-                        <p><strong>Time:</strong> ${data.meetingTime || '[To be determined]'}</p>
-                    </div>
-                    <div>
-                        <p><strong>Meeting Type:</strong> ${data.documentTitle?.split('-')[1]?.trim() || 'Board Meeting'}</p>
-                    </div>
-                </div>
-            </div>
-
-            ${data.directors && data.directors.length > 0 ? `
-            <div class="mb-6">
-                <table class="w-full border-collapse">
-                    <thead>
-                        <tr class="border-b border-gray-700">
-                            <th class="text-left py-2">PRESENT</th>
-                            <th class="text-left py-2">POSITION</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.directors.map(d => `
-                            <tr class="border-b border-gray-800">
-                                <td class="py-2">${d.name}</td>
-                                <td class="py-2">${d.position}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-            ` : ''}
-
-            ${data.attendees && data.attendees.length > 0 ? `
-            <div class="mb-6">
-                <table class="w-full border-collapse">
-                    <thead>
-                        <tr class="border-b border-gray-700">
-                            <th class="text-left py-2">IN ATTENDANCE</th>
-                            <th class="text-left py-2">COMPANY</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.attendees.map(a => `
-                            <tr class="border-b border-gray-800">
-                                <td class="py-2">${a.name}</td>
-                                <td class="py-2">${a.company}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-            ` : ''}
-
-            ${data.chairperson ? `
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2">1. Chairperson</h3>
-                <p>It was agreed that ${data.chairperson} would Chair the meeting.</p>
-            </div>
-            ` : ''}
-
-            ${data.quorumNoted ? `
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2">2. Quorum</h3>
-                <p>${data.quorumNoted}</p>
-            </div>
-            ` : ''}
-
-            ${data.disclosureOfInterest ? `
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2">3. Disclosure of Interest</h3>
-                <p>${data.disclosureOfInterest}</p>
-            </div>
-            ` : ''}
-
-            ${data.businessPurpose ? `
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2">4. Business of the meeting</h3>
-                <p>The Chairperson reported that the purpose of the meeting was to consider and, if deemed fit:</p>
-                <p class="mt-2">${data.businessPurpose}</p>
-            </div>
-            ` : ''}
-
-            ${data.agreementType ? `
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2">5. Approval of Agreement</h3>
-                <p class="mb-2">5.1 The following documents were produced to the meeting:</p>
-                <p class="ml-4">A draft of the ${data.agreementType}${data.counterpartyName ? ` with ${data.counterpartyName}` : ''}.</p>
-            </div>
-            ` : ''}
-
-            ${data.resolutions && data.resolutions.length > 0 ? `
-            <div class="mb-6">
-                ${data.resolutions.map(r => `
-                    <p class="mb-4"><strong>${r.section}</strong> ${r.text}</p>
-                `).join('')}
-            </div>
-            ` : ''}
-
-            ${data.filingInstructions ? `
-            <div class="mb-6">
-                <h3 class="font-semibold mb-2">7. Filing</h3>
-                <p>${data.filingInstructions}</p>
-            </div>
-            ` : ''}
-
-            ${data.closingStatement ? `
-            <div class="mb-8">
-                <h3 class="font-semibold mb-2">8. Close</h3>
-                <p>${data.closingStatement}</p>
-            </div>
-            ` : ''}
-
-            <div class="mt-12 pt-6 border-t border-gray-700">
-                <div class="grid grid-cols-2 gap-8">
-                    <div>
-                        <div class="border-t border-gray-600 pt-2">
-                            <p class="text-sm text-gray-400">Secretary Signature</p>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="border-t border-gray-600 pt-2">
-                            <p class="text-sm text-gray-400">Date</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-};
-
-// Parse HTML back to resolution data (simplified - you may need more robust parsing)
-const parseHTMLToData = (html: string): ResolutionData => {
-    // This is a simplified version - in production you'd want more robust parsing
-    // For now, we'll just store the HTML and parse what we can
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    
-    // Extract basic fields (this is simplified - you'd need more robust extraction)
-    return {
-        resolutionTitle: doc.querySelector('h1')?.textContent || '',
-        entityName: doc.querySelector('.resolution-document > div > p:nth-of-type(1)')?.textContent || '',
-        // Add more parsing as needed
-    };
-};
 
 const ResolutionPreviewContent = ({
     resolution = '',
@@ -254,27 +100,10 @@ const ResolutionPreviewContent = ({
     // Parse and set initial resolution data
     useEffect(() => {
         if (!editor) return;
+
+        editor.commands.setContent(resolution);
+        setOriginalContent(resolution as string);
         
-        if (typeof resolution === 'string' && resolution) {
-            try {
-                const parsed = JSON.parse(resolution);
-                setResolutionData(parsed);
-                
-                // Use stored HTML if available (edited content), otherwise generate from data
-                const html = parsed._html || convertToHTML(parsed);
-                editor.commands.setContent(html);
-                setOriginalContent(html);
-            } catch {
-                setResolutionData({});
-            }
-        } else if (typeof resolution === 'object') {
-            setResolutionData(resolution);
-            
-            // Use stored HTML if available (edited content), otherwise generate from data
-            const html = (resolution as any)._html || convertToHTML(resolution);
-            editor.commands.setContent(html);
-            setOriginalContent(html);
-        }
     }, [resolution, editor]);
 
     // Update editor editable state when edit mode changes
@@ -285,15 +114,12 @@ const ResolutionPreviewContent = ({
     const handleSave = () => {
         if (editor) {
             const html = editor.getHTML();
-            // Store the edited HTML as the new resolution content
-            const updatedData = { ...resolutionData, _html: html };
-            const updatedResolution = JSON.stringify(updatedData);
-            
+
             setOriginalContent(html);
             setHasChanges(false);
             
             // Pass edited content to parent
-            onSaveEdit?.(updatedResolution);
+            onSaveEdit?.(html);
         } else {
             onSaveEdit?.();
         }

@@ -11,6 +11,7 @@ interface MeetingRecordingContentProps {
     date?: string;
     jurisdiction?: string;
     audioBlob?: Blob | File | null;
+    audioUrl?: string;
     transcription?: string;
     isTranscribing?: boolean;
 }
@@ -21,6 +22,7 @@ const MeetingRecordingContent = ({
     date = 'December 15, 2024',
     jurisdiction = 'Delaware, USA',
     audioBlob,
+    audioUrl,
     transcription = '',
     isTranscribing = false,
 }: MeetingRecordingContentProps) => {
@@ -73,7 +75,7 @@ const MeetingRecordingContent = ({
             </div>
 
             <div className="p-6 space-y-6">
-                <AudioPlayer audioBlob={audioBlob} />
+                <AudioPlayer audioBlob={audioBlob} audioUrl={audioUrl} />
 
                 {/* Live Transcript Section */}
                 <div className="rounded-lg">

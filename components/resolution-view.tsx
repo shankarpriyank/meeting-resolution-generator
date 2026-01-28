@@ -174,6 +174,7 @@ const generateResolutionHTML = (data: ResolutionData): string => {
 interface ResolutionViewProps {
     // Meeting Recording Props
     audioBlob?: Blob | File | null;
+    audioUrl?: string;
     transcription?: string;
     isTranscribing?: boolean;
     transcriptionProgress?: number;
@@ -188,6 +189,7 @@ interface ResolutionViewProps {
     onEdit?: (editedResolution: string) => void;
     onAccept?: () => void;
     onAddAnother?: () => void;
+    meetingStatus?: string;
     metadata?: {
         entityName?: string;
         jurisdiction?: string;
@@ -200,6 +202,7 @@ interface ResolutionViewProps {
 
 const ResolutionView = ({
     audioBlob,
+    audioUrl,
     transcription = '',
     isTranscribing = false,
     transcriptionProgress = 0,
@@ -212,9 +215,10 @@ const ResolutionView = ({
     onEdit,
     onAccept,
     onAddAnother,
+    meetingStatus = 'DRAFT',
     metadata,
 }: ResolutionViewProps) => {
-    const [isEditMode, setIsEditMode] = useState(true);
+    const [isEditMode, setIsEditMode] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
     // Determine status for resolution preview navbar
@@ -322,6 +326,7 @@ const ResolutionView = ({
                 <MeetingRecordingNavbar />
                 <MeetingRecordingContent
                     audioBlob={audioBlob}
+                    audioUrl={audioUrl}
                     transcription={transcription}
                     isTranscribing={isTranscribing}
                     meetingTitle={meetingTitle}
@@ -356,6 +361,7 @@ const ResolutionView = ({
                     onDownload={handleDownloadPDF}
                     isEditMode={isEditMode}
                     isDownloading={isDownloading}
+                    meetingStatus={meetingStatus}
                 />
             </div>
         </div>

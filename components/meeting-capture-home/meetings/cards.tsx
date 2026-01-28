@@ -84,12 +84,6 @@ export function MeetingCard({ meeting, onActionClick }: MeetingCardProps) {
           <span>
             Duration: <span className="font-bold text-white">{meeting.duration}</span>
           </span>
-          <span>
-            Resolutions: <span className="font-bold text-white">{meeting.resolutions.count} {meeting.resolutions.status}</span>
-          </span>
-          <span>
-            Signatures: <span className="font-bold text-white">{meeting.signatures.current}/{meeting.signatures.total}</span>
-          </span>
         </div>
 
       <div className="shrink-0">
