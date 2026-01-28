@@ -80,7 +80,7 @@ export default function MonitoringPage() {
     }, []);
 
     const formatCost = (cost: number) => {
-        return `$${cost.toFixed(4)}`;
+        return `${cost?.toFixed(4)}`;
     };
 
     const formatLatency = (ms: number) => {

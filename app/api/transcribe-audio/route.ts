@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
                 provider: 'openai',
                 model: 'whisper-1',
                 status: 'error',
-                latencyMs,
-                errorMessage: `OpenAI API error: ${response.statusText}`,
-                clientIp,
+                latency_ms : latencyMs,
+                error_message: `OpenAI API error: ${response.statusText}`,
+                client_ip: clientIp,
                 metadata: { fileSize: file.size, fileName: file.name },
             });
 
@@ -100,9 +100,9 @@ export async function POST(request: NextRequest) {
             provider: 'openai',
             model: 'whisper-1',
             status: 'success',
-            latencyMs,
-            estimatedCost,
-            clientIp,
+            latency_ms: latencyMs,
+            estimated_cost: estimatedCost,
+            client_ip: clientIp,
             metadata: { 
                 fileSize: file.size, 
                 fileName: file.name,
@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
             provider: 'openai',
             model: 'whisper-1',
             status: 'error',
-            latencyMs,
-            errorMessage: error.message || 'Unknown error',
-            clientIp,
+            latency_ms: latencyMs,
+            error_message: error.message || 'Unknown error',
+            client_ip: clientIp,
         });
 
         console.error('Transcription error:', error);

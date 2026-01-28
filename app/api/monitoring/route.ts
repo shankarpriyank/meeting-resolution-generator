@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
         // If time range is specified, return records for that range
         if (startTime && endTime) {
-            const records = getRecordsByTimeRange(
+            const records = await getRecordsByTimeRange(
                 parseInt(startTime, 10),
                 parseInt(endTime, 10)
             );
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Otherwise, return general monitoring stats
-        const stats = getMonitoringStats(limit);
+        const stats = await getMonitoringStats(limit);
 
         return NextResponse.json(
             {
@@ -108,7 +108,7 @@ export async function DELETE(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const daysToKeep = parseInt(searchParams.get('daysToKeep') || '30', 10);
 
-        const deletedCount = clearOldRecords(daysToKeep);
+        const deletedCount = await clearOldRecords(daysToKeep);
 
         return NextResponse.json(
             {

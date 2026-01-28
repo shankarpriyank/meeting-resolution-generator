@@ -136,11 +136,11 @@ Extract all relevant information from the transcription. If specific information
       provider: 'anthropic',
       model: 'claude-3-haiku-20240307',
       status: 'success',
-      latencyMs,
-      inputTokens,
-      outputTokens,
-      estimatedCost,
-      clientIp,
+      latency_ms: latencyMs,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      estimated_cost: estimatedCost,
+      client_ip: clientIp,
     });
 
     console.log('Generated Resolution Text:', resolutionText);
@@ -172,9 +172,9 @@ Extract all relevant information from the transcription. If specific information
       provider: 'anthropic',
       model: 'claude-3-haiku-20240307',
       status: 'error',
-      latencyMs,
-      errorMessage: error.message || 'Unknown error',
-      clientIp,
+      latency_ms: latencyMs,
+      error_message: error.message || 'Unknown error',
+      client_ip: clientIp,
     });
 
     console.error('Error generating resolution:', error);
