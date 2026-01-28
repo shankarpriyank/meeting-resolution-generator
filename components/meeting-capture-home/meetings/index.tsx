@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { MeetingCard, type Meeting } from './cards';
 
-type FilterType = 'All' | 'Draft' | 'Complete';
+type FilterType = 'All' | 'Draft' | 'Completed';
 
 interface MeetingData {
   id: string;
@@ -116,7 +116,7 @@ export function ActiveMeetings() {
   const filteredMeetings = meetings.filter(meeting => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'Draft') return meeting.status === 'drafting-complete';
-    if (activeFilter === 'Complete') return meeting.status === 'signed-archived';
+    if (activeFilter === 'Completed') return meeting.status === 'signed-archived';
     return true;
   });
 
@@ -125,7 +125,7 @@ export function ActiveMeetings() {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">Active Meetings</h2>
         <div className="flex gap-2">
-          {(['All', 'Draft', 'Complete'] as FilterType[]).map((filter) => (
+          {(['All', 'Draft', 'Completed'] as FilterType[]).map((filter) => (
             <Button
               key={filter}
               type="button"
