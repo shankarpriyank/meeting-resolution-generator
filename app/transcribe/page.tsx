@@ -141,7 +141,7 @@ And we've been doing this for a while.`);
         meetingType: '',
     });
 
-    const handleAudioUpload = async (file: File) => {
+    const handleAudioUpload = async (file: File | null) => {
         setAudioFile(file);
     };
 
@@ -208,7 +208,7 @@ And we've been doing this for a while.`);
 
             setTranscriptionProgress(100);
             setIsTranscribing(false);
-            
+
             // Automatically generate resolution after transcription completes
             await generateResolution(formattedTranscription);
         } catch (error) {
@@ -219,7 +219,7 @@ And we've been doing this for a while.`);
 
     const generateResolution = async (transcriptionText?: string) => {
         const textToUse = transcriptionText || transcription;
-        
+
         if (!textToUse) {
             alert('Please transcribe audio first');
             return;
@@ -244,11 +244,11 @@ And we've been doing this for a while.`);
                     metadata: meetingMetadata,
                 }),
             });
-            
+
             if (!response.ok) {
                 throw new Error('Failed to generate resolution');
             }
-            
+
             const data = await response.json();
             console.log(data)
             setResolution(data.resolution);
