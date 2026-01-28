@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,7 @@ import { ConnectPlatform } from '@/components/meeting-capture-home/connect-platf
 import ResolutionView from '@/components/resolution-view';
 import { convertToHTML } from '@/lib/resolution-html';
 
-
-
-export default function TranscribePage() {
+function TranscribePageContent() {
     const searchParams = useSearchParams();
     const meetingId = searchParams.get('id');
 
@@ -542,4 +540,16 @@ export default function TranscribePage() {
                 metadata={meetingMetadata}
             /> */}
         </>);
+}
+
+export default function TranscribePage() {
+    return (
+        <Suspense fallback={
+            <div className="bg-[#0a0a0a] min-h-screen flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+            </div>
+        }>
+            <TranscribePageContent />
+        </Suspense>
+    );
 }
