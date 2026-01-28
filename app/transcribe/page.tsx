@@ -12,6 +12,7 @@ import { MeetingMetadataForm } from '@/components/meeting-capture-home/meeting-m
 import { ConnectPlatform } from '@/components/meeting-capture-home/connect-platform';
 import ResolutionView from '@/components/resolution-view';
 import { convertToHTML } from '@/lib/resolution-html';
+import { toast } from 'sonner';
 
 function TranscribePageContent() {
     const searchParams = useSearchParams();
@@ -131,7 +132,8 @@ function TranscribePageContent() {
     const handleProcessMeeting = async () => {
         setIsProcessingMeeting(true);
         if (!audioFile) {
-            alert('Please upload an audio file first');
+            toast.warning('Please upload an audio file first');
+            setIsProcessingMeeting(false);
             return;
         }
 
@@ -236,12 +238,12 @@ function TranscribePageContent() {
         const textToUse = transcriptionText || transcription;
 
         if (!textToUse) {
-            alert('Please transcribe audio first');
+            toast.warning('Please transcribe audio first');
             return;
         }
 
         if (!meetingMetadata.entityName || !meetingMetadata.meetingType) {
-            alert('Please fill in at least the entity name and meeting type');
+            toast.warning('Please fill in at least the entity name and meeting type');
             return;
         }
 
@@ -267,12 +269,7 @@ function TranscribePageContent() {
             const data = await response.json();
             console.log(data)
 
-            // Stringify the resolution object for state and saving
-            const resolutionString = typeof data.resolution === 'string'
-                ? data.resolution
-                : JSON.stringify(data.resolution);
-
-
+            // Convert resolution to HTML and set it
             setResolution(convertToHTML(data.resolution));
 
             // Create or update meeting entry after resolution is generated
@@ -283,7 +280,7 @@ function TranscribePageContent() {
             );
         } catch (error) {
             console.error('Error generating resolution:', error);
-            alert('Failed to generate resolution. Please try again.');
+            toast.error('Failed to generate resolution. Please try again.');
         } finally {
             setIsGeneratingResolution(false);
         }
@@ -419,17 +416,17 @@ function TranscribePageContent() {
 
                 if (response.ok) {
                     setMeetingStatus('COMPLETED');
-                    alert('Resolution accepted and saved!');
+                    toast.success('Resolution accepted and saved!');
                 } else {
                     console.error('Failed to update meeting status:', await response.text());
-                    alert('Failed to save resolution. Please try again.');
+                    toast.error('Failed to save resolution. Please try again.');
                 }
             } catch (error) {
                 console.error('Error accepting resolution:', error);
-                alert('Failed to save resolution. Please try again.');
+                toast.error('Failed to save resolution. Please try again.');
             }
         } else {
-            alert('Meeting ID not found. Please try again.');
+            toast.error('Meeting ID not found. Please try again.');
         }
     };
 
