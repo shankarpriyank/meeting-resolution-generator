@@ -16,31 +16,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = `You are a legal document expert specializing in corporate governance documents. Based on the following meeting transcription and metadata, generate a formal corporate resolution in the Veridraft style.
+    const prompt = `You are a legal document expert specializing in corporate governance documents for Ireland. Based on the following meeting transcription and metadata, generate a structured board meeting resolution following the Irish corporate governance format.
 
 MEETING METADATA:
 - Entity Name: ${metadata.entityName || 'N/A'}
-- Jurisdiction: ${metadata.jurisdiction || 'N/A'}
-- Meeting Type: ${metadata.meetingType || 'N/A'}
+- Jurisdiction: ${metadata.jurisdiction || 'Ireland'}
+- Meeting Type: ${metadata.meetingType || 'Board Meeting'}
 - Date & Time: ${metadata.dateTime || 'N/A'}
 
 MEETING TRANSCRIPTION:
 ${transcription}
 
-Please generate a formal corporate resolution that:
-1. Follows legal corporate resolution formatting standards
-2. Includes proper headers with entity name, meeting type, date, and jurisdiction
-3. Contains "WHEREAS" clauses that provide context and background
-4. Contains "RESOLVED" clauses that clearly state the decisions made
-5. Uses formal legal language appropriate for corporate governance
-6. Includes signature blocks at the end
-7. Is formatted professionally and ready for execution
+Extract and structure the following components from the transcription. 
 
-The resolution should capture all decisions, motions, and votes mentioned in the transcription.`;
+CRITICAL: Your response must be ONLY the JSON object below. Do not include markdown code blocks, explanations, or any other text. Return raw JSON only.
+
+JSON structure to return:
+
+{
+  "resolutionTitle": "RESOLUTION 1: [Extract the main resolution title from transcription]",
+  "documentTitle": "BOARD MEETING MINUTES TEMPLATE: IRELAND - [Extract the resolution type]",
+  "entityName": "[Entity name from metadata or transcription]",
+  "meetingLocation": "[Extract meeting location]",
+  "meetingDate": "[Extract or use metadata date]",
+  "meetingTime": "[Extract or use metadata time]",
+  "directors": [
+    {"name": "[Director 1 name]", "position": "Director"},
+    {"name": "[Director 2 name]", "position": "Director"}
+  ],
+  "attendees": [
+    {"name": "[Attendee name]", "company": "[Company name]"}
+  ],
+  "chairperson": "[Name of chairperson]",
+  "quorumNoted": "The Chairperson noted that a quorum of directors was present for the meeting.",
+  "disclosureOfInterest": "The Chairperson reminded the directors present that each director was required to disclose to the meeting if they are disqualified from participating in the meeting and / or voting on any of the considerations, determinations and resolutions to be made. The Chairperson further reminded the directors that each director was required to disclose their interest in a contract or proposed contract with the Company to be considered at the meeting, or their interest in a contract which the Company has entered into, or a contract which was previously considered by the Board or a committee of the board of directors of which they are a member and in which they have since become interested.",
+  "businessPurpose": "[Extract the main purpose/business of the meeting]",
+  "agreementType": "[Extract type of agreement being approved]",
+  "counterpartyName": "[Extract counterparty name]",
+  "resolutions": [
+    {
+      "section": "5.2",
+      "text": "Following consideration of the terms of the Agreement, IT WAS RESOLVED that the Agreement was in the best interests of the Company."
+    },
+    {
+      "section": "5.3",
+      "text": "IT WAS FURTHER RESOLVED to approve the Agreement in the form produced to the meeting and authorise each director or the company secretary (or in the case of execution of a deed any two directors or any director and the company secretary) to execute the Agreement, subject to such amendments as they think fit."
+    },
+    {
+      "section": "6.1",
+      "text": "IT WAS RESOLVED that each director or the company secretary (or in the case of execution of a deed any two directors or any director and the company secretary) of the Company be and is hereby authorised on behalf of the Company to negotiate, finalise, agree and approve the terms of, and execute, sign, date, time and/or deliver, and to take or procure to be taken any act or step considered necessary, desirable or expedient, in connection with implementing the matters dealt with above."
+    },
+    {
+      "section": "6.2",
+      "text": "IT WAS FURTHER RESOLVED that to the extent that any acts and/or things have already been implemented or carried out by or on behalf of the Company in connection with the matters approved at the meeting, such acts and/or things be and are hereby authorised and ratified."
+    }
+  ],
+  "filingInstructions": "The Chairperson instructed the company secretary to make all necessary and appropriate entries in the books and registers of the Company and to arrange for any necessary forms and documents to be filed at the Companies Registration Office.",
+  "closingStatement": "There was no further business and the Chairperson declared the meeting closed."
+}
+
+Extract all relevant information from the transcription. If specific information is not available, use placeholder text like "[To be determined]" or make reasonable inferences based on the context.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307',
       max_tokens: 4096,
+      system: 'You are a JSON API that returns only valid JSON objects. Never include markdown formatting, explanations, or any text outside the JSON object.',
       messages: [
         {
           role: 'user',
@@ -49,11 +89,25 @@ The resolution should capture all decisions, motions, and votes mentioned in the
       ],
     });
 
-    const resolution = message.content[0].type === 'text' 
+    const resolutionText = message.content[0].type === 'text' 
       ? message.content[0].text 
       : '';
 
-      console.log('Generated Resolution:', resolution);
+    console.log('Generated Resolution Text:', resolutionText);
+
+    // Parse the JSON response
+    let resolution;
+    try {
+      // Try to extract JSON from the response if it's wrapped in markdown code blocks
+      const jsonMatch = resolutionText.match(/```json\s*([\s\S]*?)\s*```/) || 
+                        resolutionText.match(/```\s*([\s\S]*?)\s*```/);
+      const jsonText = jsonMatch ? jsonMatch[1] : resolutionText;
+      resolution = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error('Error parsing JSON:', parseError);
+      // If parsing fails, return the raw text
+      resolution = { rawText: resolutionText };
+    }
 
     return NextResponse.json({ resolution });
   } catch (error: any) {

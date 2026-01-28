@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, ArrowRight } from 'lucide-react';
@@ -143,13 +143,26 @@ And we've been doing this for a while.`);
 
     const handleAudioUpload = async (file: File) => {
         setAudioFile(file);
+    };
+
+    const handleProcessMeeting = async () => {
+        if (!audioFile) {
+            alert('Please upload an audio file first');
+            return;
+        }
+
+        if (!meetingMetadata.entityName || !meetingMetadata.meetingType) {
+            alert('Please fill in at least the entity name and meeting type');
+            return;
+        }
+
         setIsTranscribing(true);
         setTranscription('');
         setTranscriptionProgress(0);
         setShowResolutionPreview(true);
 
         try {
-            await transcribeAudio(file);
+            await transcribeAudio(audioFile);
         } catch (error) {
             console.error('Transcription error:', error);
             setTranscription('Error: Failed to transcribe audio. Please try again.');
@@ -195,14 +208,19 @@ And we've been doing this for a while.`);
 
             setTranscriptionProgress(100);
             setIsTranscribing(false);
+            
+            // Automatically generate resolution after transcription completes
+            await generateResolution(formattedTranscription);
         } catch (error) {
             console.error('Transcription error:', error);
             throw error;
         }
     };
 
-    const generateResolution = async () => {
-        if (!transcription) {
+    const generateResolution = async (transcriptionText?: string) => {
+        const textToUse = transcriptionText || transcription;
+        
+        if (!textToUse) {
             alert('Please transcribe audio first');
             return;
         }
@@ -222,17 +240,17 @@ And we've been doing this for a while.`);
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    transcription,
+                    transcription: textToUse,
                     metadata: meetingMetadata,
                 }),
             });
-            console.log(response)
-
+            
             if (!response.ok) {
                 throw new Error('Failed to generate resolution');
             }
-
+            
             const data = await response.json();
+            console.log(data)
             setResolution(data.resolution);
         } catch (error) {
             console.error('Error generating resolution:', error);
@@ -260,7 +278,6 @@ And we've been doing this for a while.`);
     };
 
     const handleMetadataSubmit = (metadata: { date: string; time: string; entity: string; jurisdiction: string; meetingType: string }) => {
-        // Map form metadata to internal format
         const dateTime = metadata.date && metadata.time
             ? `${metadata.date}T${metadata.time}`
             : metadata.date || '';
@@ -273,16 +290,8 @@ And we've been doing this for a while.`);
         console.log('Meeting metadata saved:', metadata);
     };
 
-    // Automatically generate resolution when transcription finishes
-    useEffect(() => {
-        if (transcription && !isTranscribing && !resolution && !isGeneratingResolution) {
-            // Check if we have minimum required metadata
-            if (meetingMetadata.entityName && meetingMetadata.meetingType) {
-                generateResolution();
-            }
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [transcription, isTranscribing]);
+    console.log('Meeting Metadata:', meetingMetadata);
+    console.log('Audio file:', audioFile);
 
     // Format date from metadata
     const formatDate = (dateTime: string) => {
@@ -335,26 +344,18 @@ And we've been doing this for a while.`);
                             </div>
                         </div>
 
-                        {transcription && !isTranscribing && (
-                            <div className="mt-8 flex justify-center">
-                                <Button
-                                    onClick={generateResolution}
-                                    size="lg"
-                                    disabled={isGeneratingResolution}
-                                    className="px-8"
-                                >
-                                    {isGeneratingResolution ? (
-                                        <>Generating Resolution...</>
-                                    ) : (
-                                        <>
-                                            <FileText className="mr-2 h-5 w-5" />
-                                            Generate Resolution
-                                            <ArrowRight className="ml-2 h-5 w-5" />
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-                        )}
+                        <div className="mt-8 flex justify-center">
+                            <Button
+                                onClick={handleProcessMeeting}
+                                size="lg"
+                                disabled={!audioFile || !meetingMetadata.entityName || !meetingMetadata.meetingType}
+                                className="px-8"
+                            >
+                                <FileText className="mr-2 h-5 w-5" />
+                                Process Meeting & Generate Resolution
+                                <ArrowRight className="ml-2 h-5 w-5" />
+                            </Button>
+                        </div>
                     </div>
                 </>
             ) : (
@@ -375,5 +376,21 @@ And we've been doing this for a while.`);
                     metadata={meetingMetadata}
                 />
             )}
+            <ResolutionView
+                audioBlob={audioFile}
+                transcription={transcription}
+                isTranscribing={isTranscribing}
+                transcriptionProgress={transcriptionProgress}
+                meetingTitle={meetingMetadata.meetingType || 'Q4 2024 Board Meeting'}
+                entity={meetingMetadata.entityName || 'Acme Corporation Inc.'}
+                date={formatDate(meetingMetadata.dateTime)}
+                jurisdiction={meetingMetadata.jurisdiction || 'Delaware, USA'}
+                resolution={resolution}
+                isGeneratingResolution={isGeneratingResolution}
+                onEdit={handleEditResolution}
+                onAccept={handleAcceptResolution}
+                onAddAnother={handleGenerateAnother}
+                metadata={meetingMetadata}
+            />
         </>);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react'
+import React, { useState } from 'react'
 import ResolutionPreviewNavbar from './resolution-preview/navbar'
 import ResolutionPreviewContent from './resolution-preview/content'
 import ResolutionPreviewFooter from './resolution-preview/footer'
@@ -50,6 +50,8 @@ const ResolutionView = ({
     onAddAnother,
     metadata,
 }: ResolutionViewProps) => {
+    const [isEditMode, setIsEditMode] = useState(false);
+
     // Determine status for resolution preview navbar
     const getResolutionStatus = () => {
         if (isTranscribing) return { status: 'Transcribing...', color: 'info' as const };
@@ -59,6 +61,21 @@ const ResolutionView = ({
     };
 
     const { status, color } = getResolutionStatus();
+
+    const handleEditClick = () => {
+        setIsEditMode(true);
+    };
+
+    const handleSaveEdit = (editedContent?: string) => {
+        if (editedContent && onEdit) {
+            onEdit(editedContent);
+        }
+        setIsEditMode(false);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditMode(false);
+    };
 
     return (
         <div className="grid grid-cols-2">
@@ -88,19 +105,16 @@ const ResolutionView = ({
                     isGenerating={isGeneratingResolution}
                     isTranscribing={isTranscribing}
                     onEdit={onEdit}
-                    onEditClick={() => { }}
+                    isEditMode={isEditMode}
+                    onSaveEdit={handleSaveEdit}
+                    onCancelEdit={handleCancelEdit}
                     metadata={metadata}
                 />
                 <ResolutionPreviewFooter
                     onAccept={onAccept}
-                    onEdit={() => {
-                        // Trigger edit mode via exposed function
-                        const triggerEdit = (window as { __triggerEditResolution?: () => void }).__triggerEditResolution;
-                        if (typeof triggerEdit === 'function') {
-                            triggerEdit();
-                        }
-                    }}
+                    onEdit={handleEditClick}
                     onAddAnother={onAddAnother}
+                    isEditMode={isEditMode}
                 />
             </div>
         </div>

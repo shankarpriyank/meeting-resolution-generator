@@ -43,20 +43,16 @@ export function MeetingMetadataForm({ onSubmit, initialData }: MeetingMetadataFo
   });
 
   const handleChange = (field: keyof MeetingMetadata, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    const updatedData = { ...formData, [field]: value };
+    setFormData(updatedData);
+    onSubmit?.(updatedData);
   };
 
   return (
     <div>
       <h2 className="text-lg font-semibold text-white mb-6">Meeting Metadata</h2>
       
-      <form 
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit?.(formData);
-        }}
-        className="space-y-6"
-      >
+      <div className="space-y-6">
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="date" className="text-sm text-white">
@@ -141,7 +137,7 @@ export function MeetingMetadataForm({ onSubmit, initialData }: MeetingMetadataFo
             ))}
           </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
