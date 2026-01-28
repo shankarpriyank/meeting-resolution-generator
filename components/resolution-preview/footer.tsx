@@ -11,6 +11,8 @@ interface ResolutionPreviewFooterProps {
   isEditMode?: boolean;
   isDownloading?: boolean;
   meetingStatus?: string;
+  isTranscribing?: boolean;
+  isGeneratingResolution?: boolean;
 }
 
 export default function ResolutionPreviewFooter({
@@ -21,15 +23,19 @@ export default function ResolutionPreviewFooter({
   isEditMode = false,
   isDownloading = false,
   meetingStatus = 'DRAFT',
+  isTranscribing = false,
+  isGeneratingResolution = false,
 }: ResolutionPreviewFooterProps) {
   const isCompleted = meetingStatus === 'COMPLETED';
+  const isProcessing = isTranscribing || isGeneratingResolution;
+
   return (
     <div className="bg-[#0A0A0A] border-t border-[#2A2A2A] p-6">
       <div className="flex items-center gap-3 w-full">
         <Button
           type="button"
           onClick={onAccept}
-          disabled={isEditMode || isCompleted}
+          disabled={isEditMode || isCompleted || isProcessing}
           className="flex-1 bg-white text-[#1A1A1A] hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-sm p-6 flex items-center gap-2 cursor-pointer"
         >
           <Check className="h-4 w-4" />
@@ -39,10 +45,10 @@ export default function ResolutionPreviewFooter({
         <Button
           type="button"
           onClick={onEdit}
-          disabled={isCompleted}
+          disabled={isCompleted || isProcessing}
           className={`flex-1 rounded-sm p-6 flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${isEditMode
-              ? 'bg-[#22C55E] text-white hover:bg-[#16A34A]'
-              : 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A]'
+            ? 'bg-[#22C55E] text-white hover:bg-[#16A34A]'
+            : 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A]'
             }`}
         >
           <Pencil className="h-4 w-4" />
@@ -52,7 +58,7 @@ export default function ResolutionPreviewFooter({
         <Button
           type="button"
           onClick={onAddAnother}
-          disabled={isEditMode}
+          disabled={isEditMode || isProcessing}
           className="flex-1 bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] disabled:opacity-50 disabled:cursor-not-allowed rounded-sm p-6 flex items-center gap-2 cursor-pointer"
         >
           <Plus className="h-4 w-4" />
@@ -62,7 +68,7 @@ export default function ResolutionPreviewFooter({
         <Button
           type="button"
           onClick={onDownload}
-          disabled={isEditMode || isDownloading}
+          disabled={isEditMode || isDownloading || isProcessing}
           className="flex-1 bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] disabled:opacity-50 disabled:cursor-not-allowed rounded-sm p-6 flex items-center gap-2 cursor-pointer"
         >
           {isDownloading ? (

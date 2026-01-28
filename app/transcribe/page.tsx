@@ -28,6 +28,7 @@ function TranscribePageContent() {
     const [meetingIdState, setMeetingIdState] = useState<string | null>(meetingId);
     const [meetingStatus, setMeetingStatus] = useState<string>('DRAFT');
     const [isProcessingMeeting, setIsProcessingMeeting] = useState(false);
+    const [isLoadingMeetingData, setIsLoadingMeetingData] = useState(false);
     const [meetingMetadata, setMeetingMetadata] = useState({
         date: '',
         time: '',
@@ -40,7 +41,10 @@ function TranscribePageContent() {
     // Load meeting data if ID is present
     useEffect(() => {
         if (meetingId) {
-            loadMeetingData(meetingId);
+            setIsLoadingMeetingData(true);
+            loadMeetingData(meetingId).finally(() => {
+                setIsLoadingMeetingData(false);
+            });
         }
     }, [meetingId]);
 
@@ -464,6 +468,14 @@ function TranscribePageContent() {
             return 'December 15, 2024';
         }
     };
+
+    if (isLoadingMeetingData) {
+        return (
+            <div className="bg-[#0a0a0a] min-h-screen flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+            </div>
+        );
+    }
 
     return (
         <>

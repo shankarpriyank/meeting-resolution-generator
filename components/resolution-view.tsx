@@ -362,6 +362,8 @@ const ResolutionView = ({
                     isEditMode={isEditMode}
                     isDownloading={isDownloading}
                     meetingStatus={meetingStatus}
+                    isTranscribing={isTranscribing}
+                    isGeneratingResolution={isGeneratingResolution}
                 />
             </div>
         </div>
