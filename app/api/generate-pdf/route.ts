@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
 
         // Return PDF as response with rate limit headers
         const rateLimitHeaders = createRateLimitHeaders(rateLimitResult);
-        return new NextResponse(pdfBuffer, {
+        return new NextResponse(Buffer.from(pdfBuffer), {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
