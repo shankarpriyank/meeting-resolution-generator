@@ -4,8 +4,5 @@
       "memory": 2048,
       "maxDuration": 60
     }
-  },
-  "env": {
-    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
   }
 }

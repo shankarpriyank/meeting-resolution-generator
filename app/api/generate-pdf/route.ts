@@ -264,20 +264,15 @@ export async function POST(request: NextRequest) {
         `;
 
         // Configure Chromium for serverless environment
-        const isProduction = process.env.NODE_ENV === 'production';
+        const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
         
         // Launch Puppeteer with appropriate configuration
         const browser = await puppeteer.launch({
             args: isProduction 
-                ? [
-                    ...chromium.args,
-                    '--disable-gpu',
-                    '--single-process',
-                    '--no-zygote',
-                  ] 
+                ? chromium.args
                 : ['--no-sandbox', '--disable-setuid-sandbox'],
             executablePath: isProduction 
-                ? await chromium.executablePath() 
+                ? await chromium.executablePath()
                 : process.platform === 'win32'
                     ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
                     : process.platform === 'darwin'
