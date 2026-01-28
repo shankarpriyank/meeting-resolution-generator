@@ -192,7 +192,9 @@ interface ResolutionViewProps {
         entityName?: string;
         jurisdiction?: string;
         meetingType?: string;
-        dateTime?: string;
+        meetingTitle?: string;
+        date?: string;
+        time?: string;
     };
 }
 
@@ -257,16 +259,16 @@ const ResolutionView = ({
         }
 
         setIsDownloading(true);
-        
+
         try {
             // Parse resolution to get the HTML content
             let htmlContent = '';
             let title = 'Resolution Document';
-            
+
             try {
                 const parsed = JSON.parse(resolution);
                 title = parsed.resolutionTitle || parsed.documentTitle || 'Resolution Document';
-                
+
                 // Use _html if available (edited content), otherwise generate from data
                 if (parsed._html) {
                     htmlContent = parsed._html;

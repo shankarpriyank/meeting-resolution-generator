@@ -135,10 +135,12 @@ And we've been doing this for a while.`);
     const [isGeneratingResolution, setIsGeneratingResolution] = useState(false);
     const [showResolutionPreview, setShowResolutionPreview] = useState(false);
     const [meetingMetadata, setMeetingMetadata] = useState({
-        dateTime: '',
+        date: '',
+        time: '',
         entityName: '',
         jurisdiction: '',
         meetingType: '',
+        meetingTitle: '',
     });
 
     const handleAudioUpload = async (file: File | null) => {
@@ -151,10 +153,10 @@ And we've been doing this for a while.`);
             return;
         }
 
-        if (!meetingMetadata.entityName || !meetingMetadata.meetingType) {
-            alert('Please fill in at least the entity name and meeting type');
-            return;
-        }
+        // if (!meetingMetadata.entityName || !meetingMetadata.meetingType) {
+        //     alert('Please fill in at least the entity name and meeting type');
+        //     return;
+        // }
 
         setIsTranscribing(true);
         setTranscription('');
@@ -277,15 +279,14 @@ And we've been doing this for a while.`);
         setAudioFile(null);
     };
 
-    const handleMetadataSubmit = (metadata: { date: string; time: string; entity: string; jurisdiction: string; meetingType: string }) => {
-        const dateTime = metadata.date && metadata.time
-            ? `${metadata.date}T${metadata.time}`
-            : metadata.date || '';
+    const handleMetadataSubmit = (metadata: { date: string; time: string; entity: string; jurisdiction: string; meetingType: string; meetingTitle: string }) => {
         setMeetingMetadata({
-            dateTime,
+            date: metadata.date || '',
+            time: metadata.time || '',
             entityName: metadata.entity,
             jurisdiction: metadata.jurisdiction,
             meetingType: metadata.meetingType,
+            meetingTitle: metadata.meetingTitle,
         });
         console.log('Meeting metadata saved:', metadata);
     };
@@ -294,11 +295,12 @@ And we've been doing this for a while.`);
     console.log('Audio file:', audioFile);
 
     // Format date from metadata
-    const formatDate = (dateTime: string) => {
-        if (!dateTime) return 'December 15, 2024';
+    const formatDate = (date: string, time?: string) => {
+        if (!date) return 'December 15, 2024';
         try {
-            const date = new Date(dateTime);
-            return date.toLocaleDateString('en-US', {
+            const dateTimeString = time ? `${date}T${time}` : date;
+            const dateObj = new Date(dateTimeString);
+            return dateObj.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
@@ -319,6 +321,20 @@ And we've been doing this for a while.`);
                     </div>
                     <div className="bg-[#0a0a0a] mx-auto w-full p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                            <Card className="col-span-2 p-8 bg-[#151515] border border-[#2A2A2A] rounded-sm">
+                                <MeetingMetadataForm
+                                    onSubmit={handleMetadataSubmit}
+                                    initialData={{
+                                        date: meetingMetadata.date || '',
+                                        time: meetingMetadata.time || '',
+                                        entity: meetingMetadata.entityName || '',
+                                        jurisdiction: meetingMetadata.jurisdiction || '',
+                                        meetingType: meetingMetadata.meetingType || '',
+                                        meetingTitle: meetingMetadata.meetingTitle || '',
+                                    }}
+                                />
+                            </Card>
                             <Card className="p-8 bg-[#151515] border border-[#2A2A2A] rounded-sm">
                                 <AudioUpload
                                     onUpload={handleAudioUpload}
@@ -332,24 +348,17 @@ And we've been doing this for a while.`);
                                 <ConnectPlatform />
                             </Card>
 
-                            <Card className="col-span-2 p-8 bg-[#151515] border border-[#2A2A2A] rounded-sm">
-                                <MeetingMetadataForm
-                                    onSubmit={handleMetadataSubmit}
-                                    initialData={meetingMetadata}
-                                />
-                            </Card>
-
-                            <div className="col-span-2">
+                            {/* <div className="col-span-2">
                                 <ActiveMeetings />
-                            </div>
+                            </div> */}
                         </div>
 
                         <div className="mt-8 flex justify-center">
                             <Button
                                 onClick={handleProcessMeeting}
                                 size="lg"
-                                disabled={!audioFile || !meetingMetadata.entityName || !meetingMetadata.meetingType}
-                                className="px-8"
+                                disabled={!audioFile || !meetingMetadata.entityName || !meetingMetadata.meetingType || !meetingMetadata.meetingTitle || !meetingMetadata.date}
+                                className="px-8 py-8 cursor-pointer text-white"
                             >
                                 <FileText className="mr-2 h-5 w-5" />
                                 Process Meeting & Generate Resolution
@@ -364,9 +373,9 @@ And we've been doing this for a while.`);
                     transcription={transcription}
                     isTranscribing={isTranscribing}
                     transcriptionProgress={transcriptionProgress}
-                    meetingTitle={meetingMetadata.meetingType || 'Q4 2024 Board Meeting'}
+                    meetingTitle={meetingMetadata.meetingTitle || meetingMetadata.meetingType || 'Q4 2024 Board Meeting'}
                     entity={meetingMetadata.entityName || 'Acme Corporation Inc.'}
-                    date={formatDate(meetingMetadata.dateTime)}
+                    date={formatDate(meetingMetadata.date, meetingMetadata.time)}
                     jurisdiction={meetingMetadata.jurisdiction || 'Delaware, USA'}
                     resolution={resolution}
                     isGeneratingResolution={isGeneratingResolution}
@@ -381,7 +390,7 @@ And we've been doing this for a while.`);
                 transcription={transcription}
                 isTranscribing={isTranscribing}
                 transcriptionProgress={transcriptionProgress}
-                meetingTitle={meetingMetadata.meetingType || 'Q4 2024 Board Meeting'}
+                meetingTitle={meetingMetadata.meetingTitle || meetingMetadata.meetingType || 'Q4 2024 Board Meeting'}
                 entity={meetingMetadata.entityName || 'Acme Corporation Inc.'}
                 date={formatDate(meetingMetadata.dateTime)}
                 jurisdiction={meetingMetadata.jurisdiction || 'Delaware, USA'}

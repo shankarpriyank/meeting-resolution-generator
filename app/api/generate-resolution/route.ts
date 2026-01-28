@@ -51,10 +51,12 @@ export async function POST(request: NextRequest) {
     const prompt = `You are a legal document expert specializing in corporate governance documents for Ireland. Based on the following meeting transcription and metadata, generate a structured board meeting resolution following the Irish corporate governance format.
 
 MEETING METADATA:
+- Meeting Title: ${metadata.meetingTitle || 'N/A'}
 - Entity Name: ${metadata.entityName || 'N/A'}
 - Jurisdiction: ${metadata.jurisdiction || 'Ireland'}
 - Meeting Type: ${metadata.meetingType || 'Board Meeting'}
-- Date & Time: ${metadata.dateTime || 'N/A'}
+- Date: ${metadata.date || 'N/A'}
+- Time: ${metadata.time || 'N/A'}
 
 MEETING TRANSCRIPTION:
 ${transcription}

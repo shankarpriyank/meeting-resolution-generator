@@ -1,8 +1,12 @@
+'use client'
+
 import React from 'react'
 import { Bell, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 
 const MeetingCaptureHomeNavbar = () => {
+  const router = useRouter();
   return (
     <div className="bg-[#1a1a1a] dark:bg-[#0f0f0f] border-b border-gray-700/50 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -24,6 +28,7 @@ const MeetingCaptureHomeNavbar = () => {
           <Button
             className="cursor-pointer bg-white text-gray-900 hover:bg-gray-100 rounded-sm px-6 py-5 font-medium"
             variant="default"
+            onClick={() => router.push('/transcribe')}
           >
             <Plus className="w-4 h-4 mr-1.5" />
             New Meeting
