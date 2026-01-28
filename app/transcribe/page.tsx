@@ -376,7 +376,7 @@ And we've been doing this for a while.`);
                     metadata={meetingMetadata}
                 />
             )}
-            <ResolutionView
+            {/* <ResolutionView
                 audioBlob={audioFile}
                 transcription={transcription}
                 isTranscribing={isTranscribing}
@@ -391,6 +391,6 @@ And we've been doing this for a while.`);
                 onAccept={handleAcceptResolution}
                 onAddAnother={handleGenerateAnother}
                 metadata={meetingMetadata}
-            />
+            /> */}
         </>);
 }

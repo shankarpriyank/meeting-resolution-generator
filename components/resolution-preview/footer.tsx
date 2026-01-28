@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Check, Pencil, Plus, Download } from 'lucide-react';
+import { Check, Pencil, Plus, Download, Loader2 } from 'lucide-react';
 
 interface ResolutionPreviewFooterProps {
   onAccept?: () => void;
@@ -9,6 +9,7 @@ interface ResolutionPreviewFooterProps {
   onAddAnother?: () => void;
   onDownload?: () => void;
   isEditMode?: boolean;
+  isDownloading?: boolean;
 }
 
 export default function ResolutionPreviewFooter({
@@ -17,6 +18,7 @@ export default function ResolutionPreviewFooter({
   onAddAnother,
   onDownload,
   isEditMode = false,
+  isDownloading = false,
 }: ResolutionPreviewFooterProps) {
   return (
     <div className="bg-[#0A0A0A] border-t border-[#2A2A2A] p-6">
@@ -57,11 +59,15 @@ export default function ResolutionPreviewFooter({
         <Button
           type="button"
           onClick={onDownload}
-          disabled={isEditMode}
+          disabled={isEditMode || isDownloading}
           className="flex-1 bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] disabled:opacity-50 disabled:cursor-not-allowed rounded-sm p-6 flex items-center gap-2 cursor-pointer"
         >
-          <Download className="h-4 w-4" />
-          Download PDF
+          {isDownloading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          {isDownloading ? 'Generating...' : 'Download PDF'}
         </Button>
       </div>
     </div>
