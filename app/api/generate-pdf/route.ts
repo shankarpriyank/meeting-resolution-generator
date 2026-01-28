@@ -1,12 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import puppeteerCore from 'puppeteer-core';
+import chromium from '@sparticuz/chromium-min';
 import { 
     checkRateLimit, 
     getClientIdentifier, 
     createRateLimitHeaders,
     RATE_LIMIT_TIERS 
 } from '@/lib/rate-limiter';
+
+export const dynamic = 'force-dynamic';
+
+// Remote Chromium executable for Vercel serverless
+const remoteExecutablePath =
+    'https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar';
+
+// Browser instance cache
+let browser: Awaited<ReturnType<typeof puppeteerCore.launch>> | null = null;
+
+async function getBrowser() {
+    if (browser) return browser;
+
+    if (process.env.VERCEL) {
+        browser = await puppeteerCore.launch({
+            args: chromium.args,
+            executablePath: await chromium.executablePath(remoteExecutablePath),
+            headless: true,
+        });
+    } else {
+        // Local development - use local Chrome
+        browser = await puppeteerCore.launch({
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            executablePath:
+                process.platform === 'win32'
+                    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+                    : process.platform === 'darwin'
+                        ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+                        : '/usr/bin/google-chrome',
+            headless: true,
+        });
+    }
+    return browser;
+}
 
 export async function POST(request: NextRequest) {
     const clientIp = getClientIdentifier(request);
@@ -263,24 +297,8 @@ export async function POST(request: NextRequest) {
             </html>
         `;
 
-        // Configure Chromium for serverless environment
-        const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
-        
-        // Launch Puppeteer with appropriate configuration
-        const browser = await puppeteer.launch({
-            args: isProduction 
-                ? chromium.args
-                : ['--no-sandbox', '--disable-setuid-sandbox'],
-            executablePath: isProduction 
-                ? await chromium.executablePath()
-                : process.platform === 'win32'
-                    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-                    : process.platform === 'darwin'
-                        ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-                        : '/usr/bin/google-chrome',
-            headless: true,
-        });
-
+        // Get browser instance
+        const browser = await getBrowser();
         const page = await browser.newPage();
 
         // Set content
@@ -307,7 +325,7 @@ export async function POST(request: NextRequest) {
             `,
         });
 
-        await browser.close();
+        await page.close();
 
         // Return PDF as response with rate limit headers
         const rateLimitHeaders = createRateLimitHeaders(rateLimitResult);
