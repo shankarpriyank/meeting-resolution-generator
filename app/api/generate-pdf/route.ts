@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import { 
     checkRateLimit, 
     getClientIdentifier, 
@@ -262,10 +263,27 @@ export async function POST(request: NextRequest) {
             </html>
         `;
 
-        // Launch Puppeteer
+        // Configure Chromium for serverless environment
+        const isProduction = process.env.NODE_ENV === 'production';
+        
+        // Launch Puppeteer with appropriate configuration
         const browser = await puppeteer.launch({
+            args: isProduction 
+                ? [
+                    ...chromium.args,
+                    '--disable-gpu',
+                    '--single-process',
+                    '--no-zygote',
+                  ] 
+                : ['--no-sandbox', '--disable-setuid-sandbox'],
+            executablePath: isProduction 
+                ? await chromium.executablePath() 
+                : process.platform === 'win32'
+                    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+                    : process.platform === 'darwin'
+                        ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+                        : '/usr/bin/google-chrome',
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
 
         const page = await browser.newPage();
