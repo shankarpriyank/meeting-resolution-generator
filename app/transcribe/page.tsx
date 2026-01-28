@@ -96,6 +96,34 @@ function TranscribePageContent() {
         setAudioFile(file);
     };
 
+    // Get actual duration from audio file/blob
+    const getAudioDuration = (file: File | null): Promise<number> => {
+        return new Promise((resolve) => {
+            if (!file) {
+                resolve(0);
+                return;
+            }
+
+            const audio = new Audio();
+            const url = URL.createObjectURL(file);
+
+            audio.addEventListener('loadedmetadata', () => {
+                const durationInSeconds = Math.round(audio.duration);
+                URL.revokeObjectURL(url);
+                resolve(durationInSeconds);
+            });
+
+            audio.addEventListener('error', () => {
+                URL.revokeObjectURL(url);
+                // Fallback to file size estimate if metadata loading fails
+                const fallbackDuration = Math.round((file.size / 1000) / 60);
+                resolve(fallbackDuration);
+            });
+
+            audio.src = url;
+        });
+    };
+
     const handleProcessMeeting = async () => {
         setIsProcessingMeeting(true);
         if (!audioFile) {
@@ -263,8 +291,8 @@ function TranscribePageContent() {
         fileLinkOverride?: string | null
     ) => {
         try {
-
-            const duration = audioFile ? Math.round((audioFile.size / 1000) / 60) : 0; // Rough estimate
+            // Get actual duration from audio file/blob
+            const duration = await getAudioDuration(audioFile);
             const transcriptToSave = transcriptOverride ?? transcription;
             const fileLinkToSave = fileLinkOverride ?? audioUrl ?? '';
 

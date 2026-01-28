@@ -41,11 +41,25 @@ export function ActiveMeetings() {
         // Transform database meetings to Meeting type
         const transformedMeetings: Meeting[] = meetingsData.map((m: MeetingData) => {
           const status = m.status === 'COMPLETED' ? 'signed-archived' : 'drafting-complete';
-          const durationHours = Math.floor(m.duration / 60);
-          const durationMinutes = m.duration % 60;
-          const durationStr = durationHours > 0
-            ? `${durationHours}h ${durationMinutes}m`
-            : `${durationMinutes}m`;
+
+          // Format duration: duration is stored in seconds
+          const formatDuration = (seconds: number): string => {
+            if (!seconds || seconds === 0) return '0m';
+
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+
+            const parts: string[] = [];
+            if (hours > 0) parts.push(`${hours}h`);
+            if (minutes > 0) parts.push(`${minutes}m`);
+            // Only show seconds if less than a minute
+            if ( secs > 0) parts.push(`${secs}s`);
+
+            return parts.join(' ') || '0m';
+          };
+
+          const durationStr = formatDuration(m.duration);
 
           // Parse resolution count if available
           let resolutionCount = 0;
