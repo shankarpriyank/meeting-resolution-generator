@@ -41,8 +41,13 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Remove package-lock and fresh install
+        run: |
+          rm -f package-lock.json
+          npm install
+
+      - name: Build application
+        run: npm run build
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
