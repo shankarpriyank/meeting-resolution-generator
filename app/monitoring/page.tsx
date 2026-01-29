@@ -35,14 +35,14 @@ interface MonitoringStats {
     } | null;
     recentCalls: Array<{
         id: string;
-        timestamp: number;
+        created_at: number;
         endpoint: string;
         provider: string;
         model: string;
         status: 'success' | 'error';
-        latencyMs: number;
-        estimatedCost?: number;
-        errorMessage?: string;
+        latency_ms: number;
+        estimated_cost?: number;
+        error_message?: string;
     }>;
     callsByEndpoint: Record<string, number>;
     callsByProvider: Record<string, number>;
@@ -136,7 +136,7 @@ export default function MonitoringPage() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     <Card className="bg-[#151515] border-[#2A2A2A] p-6">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-blue-500/20 rounded-lg">
@@ -179,7 +179,7 @@ export default function MonitoringPage() {
                         </div>
                     </Card>
 
-                    <Card className="bg-[#151515] border-[#2A2A2A] p-6">
+                    {/* <Card className="bg-[#151515] border-[#2A2A2A] p-6">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-purple-500/20 rounded-lg">
                                 <DollarSign className="h-6 w-6 text-purple-400" />
@@ -191,7 +191,7 @@ export default function MonitoringPage() {
                                 </p>
                             </div>
                         </div>
-                    </Card>
+                    </Card> */}
                 </div>
 
                 {/* Today's Stats and Breakdown */}
@@ -272,13 +272,13 @@ export default function MonitoringPage() {
                                     <th className="text-left py-3 px-2 font-medium">Model</th>
                                     <th className="text-left py-3 px-2 font-medium">Status</th>
                                     <th className="text-left py-3 px-2 font-medium">Latency</th>
-                                    <th className="text-left py-3 px-2 font-medium">Cost</th>
+                                    {/* <th className="text-left py-3 px-2 font-medium">Cost</th> */}
                                 </tr>
                             </thead>
                             <tbody>
                                 {stats?.recentCalls.map((call) => (
                                     <tr key={call.id} className="border-b border-[#2A2A2A] hover:bg-[#1A1A1A]">
-                                        <td className="py-3 px-2 text-sm text-gray-300">{formatTimestamp(call.timestamp)}</td>
+                                        <td className="py-3 px-2 text-sm text-gray-300">{formatTimestamp(call.created_at)}</td>
                                         <td className="py-3 px-2 text-sm font-mono text-blue-400">{call.endpoint}</td>
                                         <td className="py-3 px-2 text-sm capitalize text-gray-300">{call.provider}</td>
                                         <td className="py-3 px-2 text-sm font-mono text-gray-400">{call.model}</td>
@@ -291,8 +291,8 @@ export default function MonitoringPage() {
                                                 {call.status}
                                             </span>
                                         </td>
-                                        <td className="py-3 px-2 text-sm text-gray-300">{formatLatency(call.latencyMs)}</td>
-                                        <td className="py-3 px-2 text-sm text-gray-300">{call.estimatedCost ? formatCost(call.estimatedCost) : '-'}</td>
+                                        <td className="py-3 px-2 text-sm text-gray-300">{formatLatency(call.latency_ms)}</td>
+                                        {/* <td className="py-3 px-2 text-sm text-gray-300">{call.estimated_cost ? formatCost(call.estimated_cost) : '-'}</td> */}
                                     </tr>
                                 ))}
                                 {(!stats?.recentCalls || stats.recentCalls.length === 0) && (
