@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase-server';
+import { supabase } from '@/lib/supabase';
 
 // PUT /api/meetings/[id] - Update a meeting entry
 export async function PUT(
