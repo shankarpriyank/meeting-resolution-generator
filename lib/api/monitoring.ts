@@ -9,9 +9,9 @@ export interface MonitoringStats {
   };
   today: {
     date: string;
-    totalCalls: number;
-    successCalls: number;
-    errorCalls: number;
+    total_calls: number;
+    success_calls: number;
+    error_calls: number;
     totalLatencyMs: number;
     totalEstimatedCost: number;
     callsByEndpoint: Record<string, number>;

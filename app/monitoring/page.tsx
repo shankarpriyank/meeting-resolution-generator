@@ -128,7 +128,6 @@ export default function MonitoringPage() {
 
                 {/* Today's Stats and Breakdown */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Today's Stats */}
                     <Card className="bg-[#151515] border-[#2A2A2A] p-6">
                         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
                             <TrendingUp className="h-5 w-5 text-gray-400" />
@@ -138,15 +137,15 @@ export default function MonitoringPage() {
                             <div className="space-y-3">
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">Total Calls</span>
-                                    <span className="font-medium text-white">{stats.today.totalCalls}</span>
+                                    <span className="font-medium text-white">{stats.today.total_calls}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">Successful</span>
-                                    <span className="font-medium text-green-400">{stats.today.successCalls}</span>
+                                    <span className="font-medium text-green-400">{stats.today.success_calls}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">Failed</span>
-                                    <span className="font-medium text-red-400">{stats.today.errorCalls}</span>
+                                    <span className="font-medium text-red-400">{stats.today.error_calls}</span>
                                 </div>
                                 {/* <div className="flex justify-between">
                                     <span className="text-gray-400">Cost</span>
