@@ -16,7 +16,7 @@ export interface Meeting {
     jurisdiction: string;
     meetingType?: string;
     duration?: number;
-    resolution?: Record<string, any>;
+    resolution?: Record<string, unknown>;
     transcript?: string;
     resolution_html?: string;
     file_link?: string;
@@ -32,7 +32,7 @@ export interface CreateMeetingPayload {
     entity: string;
     jurisdiction: string;
     duration?: number;
-    resolution?: Record<string, any>;
+    resolution?: Record<string, unknown>;
     transcript: string;
     resolution_html?: string;
     file_link?: string;
@@ -41,9 +41,24 @@ export interface CreateMeetingPayload {
 
 export interface UpdateMeetingPayload {
     resolution_html?: string;
-    resolution?: Record<string, any>;
+    resolution?: Record<string, unknown>;
     status?: string;
-    [key: string]: any;
+    [key: string]: unknown;
+}
+
+/**
+ * Fetch all meetings
+ */
+export async function getMeetings(): Promise<Meeting[]> {
+    const response = await fetch('/api/meetings');
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch meetings: ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data.meetings || [];
 }
 
 /**

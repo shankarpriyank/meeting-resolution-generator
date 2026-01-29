@@ -8,6 +8,7 @@ import ResolutionPreviewFooter from './resolution-preview/footer'
 import MeetingRecordingContent from './meeting-recording/content'
 import MeetingRecordingNavbar from './meeting-recording/navbar'
 import MeetingRecordingFooter from './meeting-recording/footer'
+import { generatePdf } from '@/lib/api/pdf';
 
 // Helper function to generate HTML from resolution data
 interface ResolutionData {
@@ -244,7 +245,7 @@ const ResolutionView = ({
                 if (parsed._html) {
                     console.log('Edited HTML Content:', parsed._html);
                 }
-            } catch (e) {
+            } catch {
                 console.log('Raw content (not JSON):', editedContent);
             }
             onEdit(editedContent);
@@ -286,24 +287,7 @@ const ResolutionView = ({
 
             console.log('Generating PDF with HTML:', htmlContent);
 
-            const response = await fetch('/api/generate-pdf', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    html: htmlContent,
-                    title: title,
-                }),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to generate PDF');
-            }
-
-            // Download the PDF
-            const blob = await response.blob();
+            const blob = await generatePdf({ html: htmlContent, title });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

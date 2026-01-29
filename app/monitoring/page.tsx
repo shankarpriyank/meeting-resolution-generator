@@ -1,87 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMonitoring } from '@/hooks/use-monitoring';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-    RefreshCw, 
-    TrendingUp, 
-    Clock, 
-    DollarSign, 
+import {
+    RefreshCw,
+    TrendingUp,
+    Clock,
     AlertCircle,
     CheckCircle,
     Activity
 } from 'lucide-react';
 
-interface MonitoringStats {
-    summary: {
-        totalCalls: number;
-        successRate: number;
-        averageLatencyMs: number;
-        totalEstimatedCost: number;
-        totalInputTokens: number;
-        totalOutputTokens: number;
-    };
-    today: {
-        date: string;
-        totalCalls: number;
-        successCalls: number;
-        errorCalls: number;
-        totalLatencyMs: number;
-        totalEstimatedCost: number;
-        callsByEndpoint: Record<string, number>;
-        callsByProvider: Record<string, number>;
-        callsByModel: Record<string, number>;
-    } | null;
-    recentCalls: Array<{
-        id: string;
-        created_at: number;
-        endpoint: string;
-        provider: string;
-        model: string;
-        status: 'success' | 'error';
-        latency_ms: number;
-        estimated_cost?: number;
-        error_message?: string;
-    }>;
-    callsByEndpoint: Record<string, number>;
-    callsByProvider: Record<string, number>;
-    callsByModel: Record<string, number>;
-    topErrors: Array<{ error: string; count: number }>;
-}
-
 export default function MonitoringPage() {
-    const [stats, setStats] = useState<MonitoringStats | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const fetchStats = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await fetch('/api/monitoring?limit=100');
-            if (!response.ok) {
-                throw new Error('Failed to fetch monitoring data');
-            }
-            const data = await response.json();
-            setStats(data.data);
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchStats();
-        // Auto-refresh every 30 seconds
-        const interval = setInterval(fetchStats, 30000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const formatCost = (cost: number) => {
-        return `${cost?.toFixed(4)}`;
-    };
+    const { stats, loading, error, refresh } = useMonitoring(100, 30000);
 
     const formatLatency = (ms: number) => {
         if (ms < 1000) return `${Math.round(ms)}ms`;
@@ -107,7 +39,7 @@ export default function MonitoringPage() {
                     <div className="text-center text-red-400">
                         <AlertCircle className="h-12 w-12 mx-auto mb-4" />
                         <p className="text-lg">{error}</p>
-                        <Button onClick={fetchStats} className="mt-4 bg-white text-black hover:bg-gray-200">
+                        <Button onClick={refresh} className="mt-4 bg-white text-black hover:bg-gray-200">
                             Retry
                         </Button>
                     </div>
@@ -125,8 +57,8 @@ export default function MonitoringPage() {
                         <h1 className="text-3xl font-bold text-white">API Monitoring Dashboard</h1>
                         <p className="text-gray-400 mt-1">Track AI API usage, costs, and performance</p>
                     </div>
-                    <Button 
-                        onClick={fetchStats}
+                    <Button
+                        onClick={refresh}
                         disabled={loading}
                         className="bg-[#2A2A2A] hover:bg-[#3A3A3A] text-white border border-[#3A3A3A]"
                     >
@@ -283,11 +215,10 @@ export default function MonitoringPage() {
                                         <td className="py-3 px-2 text-sm capitalize text-gray-300">{call.provider}</td>
                                         <td className="py-3 px-2 text-sm font-mono text-gray-400">{call.model}</td>
                                         <td className="py-3 px-2">
-                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                                call.status === 'success' 
-                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                                                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                            }`}>
+                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${call.status === 'success'
+                                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                }`}>
                                                 {call.status}
                                             </span>
                                         </td>
