@@ -1,22 +1,4 @@
-interface ResolutionData {
-    entityName?: string;
-    meetingLocation?: string;
-    meetingDate?: string;
-    meetingTime?: string;
-    meetingType?: string;
-    directors?: Array<{ name: string; position: string }>;
-    attendees?: Array<{ name: string; company: string }>;
-    chairperson?: string;
-    quorumNoted?: string;
-    disclosureOfInterest?: string;
-    businessPurpose?: string;
-    agreementType?: string;
-    counterpartyName?: string;
-    approvalOfAgreement?: Array<{ section: string; text: string }>;
-    furtherAndPriorActs?: Array<{ section: string; text: string }>;
-    filingInstructions?: string;
-    closingStatement?: string;
-}
+import type { ResolutionData } from '@/types/resolution';
 
 // Convert resolution data to HTML document
 export const convertToHTML = (data: ResolutionData): string => {

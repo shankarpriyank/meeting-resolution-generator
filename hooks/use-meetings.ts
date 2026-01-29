@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getMeetings, type Meeting as ApiMeeting } from '@/lib/api/meetings';
 import type { Meeting as CardMeeting } from '@/components/meeting-capture-home/meetings/cards';
+import { formatDuration } from '@/lib/utils/formatting';
 
 type FilterType = 'All' | 'Draft' | 'Completed';
 
@@ -29,22 +30,6 @@ export function useMeetings(): UseMeetingsReturn {
 
       const transformedMeetings: CardMeeting[] = meetingsData.map((m: ApiMeeting) => {
         const status = m.status === 'COMPLETED' ? 'signed-archived' : 'drafting-complete';
-
-        const formatDuration = (seconds?: number): string => {
-          if (!seconds || seconds === 0) return '0m';
-
-          const hours = Math.floor(seconds / 3600);
-          const minutes = Math.floor((seconds % 3600) / 60);
-          const secs = seconds % 60;
-
-          const parts: string[] = [];
-          if (hours > 0) parts.push(`${hours}h`);
-          if (minutes > 0) parts.push(`${minutes}m`);
-          if (secs > 0) parts.push(`${secs}s`);
-
-          return parts.join(' ') || '0m';
-        };
-
         const durationStr = formatDuration(m.duration);
 
         let resolutionCount = 0;

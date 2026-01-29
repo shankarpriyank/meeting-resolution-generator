@@ -1,50 +1,12 @@
-export interface MeetingMetadata {
-    date: string;
-    time: string;
-    entityName: string;
-    jurisdiction: string;
-    meetingType: string;
-    meetingTitle: string;
-}
+// Re-export types from centralized location
+export type {
+    Meeting,
+    MeetingMetadata,
+    CreateMeetingPayload,
+    UpdateMeetingPayload,
+} from '@/types/meeting';
 
-export interface Meeting {
-    id: string;
-    title: string;
-    date: string;
-    time?: string;
-    entity: string;
-    jurisdiction: string;
-    meetingType?: string;
-    duration?: number;
-    resolution?: Record<string, unknown>;
-    transcript?: string;
-    resolution_html?: string;
-    file_link?: string;
-    status?: string;
-    created_at?: string;
-    updated_at?: string;
-}
-
-export interface CreateMeetingPayload {
-    title: string;
-    date: string;
-    time?: string;
-    entity: string;
-    jurisdiction: string;
-    duration?: number;
-    resolution?: Record<string, unknown>;
-    transcript: string;
-    resolution_html?: string;
-    file_link?: string;
-    status?: string;
-}
-
-export interface UpdateMeetingPayload {
-    resolution_html?: string;
-    resolution?: Record<string, unknown>;
-    status?: string;
-    [key: string]: unknown;
-}
+import type { Meeting, CreateMeetingPayload, UpdateMeetingPayload } from '@/types/meeting';
 
 /**
  * Fetch all meetings

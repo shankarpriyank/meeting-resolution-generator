@@ -11,7 +11,7 @@ import { AudioUpload } from '@/components/meeting-capture-home/upload';
 import { MeetingMetadataForm } from '@/components/meeting-capture-home/meeting-metadata-form';
 import { ConnectPlatform } from '@/components/meeting-capture-home/connect-platform';
 import ResolutionView from '@/components/resolution-view';
-import { useTranscribe } from '@/hooks/use-transcribe';
+import { useMeetingWorkflow } from '@/hooks/use-meeting-workflow';
 
 function TranscribePageContent() {
     const searchParams = useSearchParams();
@@ -37,7 +37,7 @@ function TranscribePageContent() {
         handleGenerateAnother,
         handleMetadataSubmit,
         formatDate,
-    } = useTranscribe(meetingId);
+    } = useMeetingWorkflow(meetingId);
 
     if (isLoadingMeetingData) {
         return (

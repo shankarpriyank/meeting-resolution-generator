@@ -6,32 +6,13 @@ import Image from 'next/image';
 import { Clock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { StatusChip } from '@/components/shared/status-chip';
+import type { MeetingCardData } from '@/types/meeting';
 
-export interface Meeting {
-  id: string;
-  title: string;
-  status: 'drafting-complete' | 'signed-archived';
-  date: string;
-  time: string;
-  jurisdiction: string;
-  entity: string;
-  duration: string;
-  resolutions: {
-    count: number;
-    status: 'Detected' | 'Approved';
-  };
-  signatures: {
-    current: number;
-    total: number;
-  };
-  actionButton: {
-    text: string;
-    variant: 'primary' | 'secondary';
-  };
-}
+// Re-export for backwards compatibility
+export type Meeting = MeetingCardData;
 
 interface MeetingCardProps {
-  meeting: Meeting;
+  meeting: MeetingCardData;
   onActionClick?: (meetingId: string) => void;
 }
 

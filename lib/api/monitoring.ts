@@ -1,39 +1,7 @@
-export interface MonitoringStats {
-  summary: {
-    totalCalls: number;
-    successRate: number;
-    averageLatencyMs: number;
-    totalEstimatedCost: number;
-    totalInputTokens: number;
-    totalOutputTokens: number;
-  };
-  today: {
-    date: string;
-    total_calls: number;
-    success_calls: number;
-    error_calls: number;
-    totalLatencyMs: number;
-    totalEstimatedCost: number;
-    callsByEndpoint: Record<string, number>;
-    callsByProvider: Record<string, number>;
-    callsByModel: Record<string, number>;
-  } | null;
-  recentCalls: Array<{
-    id: string;
-    created_at: number;
-    endpoint: string;
-    provider: string;
-    model: string;
-    status: 'success' | 'error';
-    latency_ms: number;
-    estimated_cost?: number;
-    error_message?: string;
-  }>;
-  callsByEndpoint: Record<string, number>;
-  callsByProvider: Record<string, number>;
-  callsByModel: Record<string, number>;
-  topErrors: Array<{ error: string; count: number }>;
-}
+// Re-export types from centralized location
+export type { MonitoringStats } from '@/types/monitoring';
+
+import type { MonitoringStats } from '@/types/monitoring';
 
 /**
  * Fetch monitoring stats
