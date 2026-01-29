@@ -1,23 +1,46 @@
 import type { ResolutionData } from '@/types/resolution';
+import { getJurisdictionConfig } from './prompts/jurisdiction-config';
 
-// Convert resolution data to HTML document
-export const convertToHTML = (data: ResolutionData): string => {
-    return `
+/**
+ * Convert resolution data to HTML document
+ * Generates jurisdiction-aware HTML formatting
+ *
+ * @param data - The resolution data object
+ * @param jurisdiction - Optional jurisdiction for formatting (defaults to Ireland)
+ * @returns HTML string representation of the resolution
+ */
+export const convertToHTML = (
+  data: ResolutionData,
+  jurisdiction?: string
+): string => {
+  const config = getJurisdictionConfig(jurisdiction || 'Ireland');
+
+  // Get disclosure text - use data or fall back to jurisdiction standard
+  const disclosureText =
+    data.disclosureOfInterest || config.standardPhrases.disclosure;
+  const filingText =
+    data.filingInstructions || config.standardPhrases.filing;
+  const closingText =
+    data.closingStatement || config.standardPhrases.closing;
+
+  return `
         <div class="resolution-document">
-            <div class="mb-8" style="text-align: center;">
-                <h3 class="font-bold text-lg mb-1" style="text-align: center;">${data.entityName || '[To be determined]'}</h3>
-                <p class="text-sm text-gray-400" style="text-align: center;">${data.meetingDate || '[To be determined]'}</p>
-            </div>
-            
-            <div class="py-4 mb-6">
-                <div class="grid grid-cols-1 text-sm">
-                    <p><strong>Location:</strong> ${data.meetingLocation || '[To be determined]'}</p>
-                    <p><strong>Time:</strong> ${data.meetingTime || '[To be determined]'}</p>
-                    <p><strong>Meeting Type:</strong> ${data.meetingType || '[To be determined]'}</p>
-                </div>
+            <div class="mb-2" style="text-align: center;">
+                <p class="text-xs text-gray-400 mb-4" style="text-align: center;">BOARD MEETING MINUTES: ${config.region.toUpperCase()} - ${data.agreementType ? 'APPROVAL OF AGREEMENT / CONTRACT' : (data.meetingType?.toUpperCase() || 'BOARD MEETING')}</p>
             </div>
 
-            ${data.directors && data.directors.length > 0 ? `
+            <div class="mb-8" style="text-align: center;">
+                <h3 class="font-bold text-lg mb-1" style="text-align: center;">${data.entityName || '[To be confirmed]'}</h3>
+                <p class="text-sm text-gray-400" style="text-align: center;">(the "Company")</p>
+            </div>
+
+            <div class="mb-6">
+                <p class="text-sm">Minutes of a meeting of the board of the Company (the "Board") duly convened, constituted and held at ${data.meetingLocation || '[To be confirmed]'} on ${data.meetingDate || '[To be confirmed]'} at ${data.meetingTime || '[To be confirmed]'}.</p>
+            </div>
+
+            ${
+              data.directors && data.directors.length > 0
+                ? `
             <div class="mb-6">
                 <table class="w-full border-collapse">
                     <thead>
@@ -27,18 +50,26 @@ export const convertToHTML = (data: ResolutionData): string => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${data.directors.map(d => `
+                        ${data.directors
+                          .map(
+                            (d) => `
                             <tr class="border-b border-gray-800">
                                 <td class="py-2">${d.name}</td>
                                 <td class="py-2">${d.position}</td>
                             </tr>
-                        `).join('')}
+                        `
+                          )
+                          .join('')}
                     </tbody>
                 </table>
             </div>
-            ` : ''}
+            `
+                : ''
+            }
 
-            ${data.attendees && data.attendees.length > 0 ? `
+            ${
+              data.attendees && data.attendees.length > 0
+                ? `
             <div class="mb-6">
                 <table class="w-full border-collapse">
                     <thead>
@@ -48,90 +79,97 @@ export const convertToHTML = (data: ResolutionData): string => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${data.attendees.map(a => `
+                        ${data.attendees
+                          .map(
+                            (a) => `
                             <tr class="border-b border-gray-800">
                                 <td class="py-2">${a.name}</td>
                                 <td class="py-2">${a.company}</td>
                             </tr>
-                        `).join('')}
+                        `
+                          )
+                          .join('')}
                     </tbody>
                 </table>
             </div>
-            ` : ''}
+            `
+                : ''
+            }
 
-            ${data.chairperson ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">1. Chairperson</h3>
-                <p>It was agreed that ${data.chairperson} would Chair the meeting.</p>
+                <p>It was agreed that ${data.chairperson || '[To be confirmed]'} would Chair the meeting.</p>
             </div>
-            ` : ''}
 
-            ${data.quorumNoted ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">2. Quorum</h3>
-                <p>${data.quorumNoted}</p>
+                <p>${data.quorumNoted || 'The Chairperson noted that a quorum of directors was present for the meeting.'}</p>
             </div>
-            ` : ''}
 
-            ${data.disclosureOfInterest ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">3. Disclosure of Interest</h3>
-                <p>${data.disclosureOfInterest}</p>
+                <p>${disclosureText}</p>
             </div>
-            ` : ''}
 
-            ${data.businessPurpose ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">4. Business of the meeting</h3>
-                <p>The Chairperson reported that the purpose of the meeting was to consider and, if deemed fit:</p>
-                <p class="mt-2">${data.businessPurpose}</p>
+                ${
+                  data.businessPurpose
+                    ? `<p>${data.agreementType
+                        ? 'The Chairperson reported that the purpose of the meeting was to consider and, if deemed fit:'
+                        : 'The Chairperson reported that the meeting had been convened to consider:'}</p>
+                <p class="mt-2">${data.businessPurpose}</p>`
+                    : '<p>No resolutions were passed in respect of this matter.</p>'
+                }
             </div>
-            ` : ''}
 
-            ${data.agreementType ? `
             <div class="mb-6">
-                <h3 class="font-semibold mb-2">5. Approval of Agreement</h3>
-                <p class="mb-2">5.1 The following documents were produced to the meeting:</p>
-                <p class="ml-4">A draft of the ${data.agreementType}${data.counterpartyName ? ` with ${data.counterpartyName}` : ''}.</p>
+                <h3 class="font-semibold mb-2">5. ${data.agreementType ? 'Approval of Agreement' : 'Resolutions'}</h3>
+                ${
+                  data.agreementType
+                    ? `<p class="mb-2"><strong>5.1</strong> The following documents were produced to the meeting:</p>
+                <p class="ml-4">A draft of the ${data.agreementType}${data.counterpartyName ? ` with ${data.counterpartyName}` : ''}.</p>`
+                    : ''
+                }
+                ${
+                  data.approvalOfAgreement && data.approvalOfAgreement.length > 0
+                    ? data.approvalOfAgreement
+                        .map(
+                          (r) => `<p class="mb-4"><strong>${r.section}</strong> ${r.text}</p>`
+                        )
+                        .join('')
+                    : '<p>No resolutions were passed in respect of this matter.</p>'
+                }
             </div>
-            ` : ''}
 
-            ${data.approvalOfAgreement && data.approvalOfAgreement.length > 0 ? `
             <div class="mb-6">
-                ${data.approvalOfAgreement.map(r => `
-                    <p class="mb-4"><strong>${r.section}</strong> ${r.text}</p>
-                `).join('')}
+                <h3 class="font-semibold mb-2">6. Further and Prior Acts</h3>
+                ${
+                  data.furtherAndPriorActs && data.furtherAndPriorActs.length > 0
+                    ? data.furtherAndPriorActs
+                        .map(
+                          (r) => `<p class="mb-4"><strong>${r.section}</strong> ${r.text}</p>`
+                        )
+                        .join('')
+                    : '<p>No resolutions were passed in respect of this matter.</p>'
+                }
             </div>
-            ` : ''}
 
-            ${data.furtherAndPriorActs && data.furtherAndPriorActs.length > 0 ? `
-            <div class="mb-6">
-            <h3 class="font-semibold mb-2">6. Further and Prior Acts</h3>
-                ${data.furtherAndPriorActs.map(r => `
-                    <p class="mb-4"><strong>${r.section}</strong> ${r.text}</p>
-                `).join('')}
-            </div>
-            ` : ''}
-
-            ${data.filingInstructions ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">7. Filing</h3>
-                <p>${data.filingInstructions}</p>
+                <p>${filingText}</p>
             </div>
-            ` : ''}
 
-            ${data.closingStatement ? `
             <div class="mb-8">
                 <h3 class="font-semibold mb-2">8. Close</h3>
-                <p>${data.closingStatement}</p>
+                <p>${closingText}</p>
             </div>
-            ` : ''}
 
             <div class="mt-12 pt-6">
                 <div class="grid grid-cols-2 gap-8">
                     <div>
                         <div class="border-t border-gray-600 pt-2">
-                            <p class="text-sm text-gray-400">Secretary Signature</p>
+                            <p class="text-sm text-gray-400">Chairperson</p>
                         </div>
                     </div>
                     <div>
