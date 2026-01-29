@@ -216,10 +216,10 @@ export default function MonitoringPage() {
                                     <span className="text-gray-400">Failed</span>
                                     <span className="font-medium text-red-400">{stats.today.errorCalls}</span>
                                 </div>
-                                <div className="flex justify-between">
+                                {/* <div className="flex justify-between">
                                     <span className="text-gray-400">Cost</span>
                                     <span className="font-medium text-white">{formatCost(stats.today.totalEstimatedCost)}</span>
-                                </div>
+                                </div> */}
                             </div>
                         ) : (
                             <p className="text-gray-500">No data for today yet</p>
