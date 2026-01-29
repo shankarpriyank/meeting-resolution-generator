@@ -305,7 +305,7 @@ const ResolutionView = ({
     };
 
     return (
-        <div className="grid grid-cols-2">
+        <div className="grid grid-cols-2" data-testid="resolution-view">
             <div className="col-span-1 border-r border-[#27272A]">
                 <MeetingRecordingNavbar />
                 <MeetingRecordingContent

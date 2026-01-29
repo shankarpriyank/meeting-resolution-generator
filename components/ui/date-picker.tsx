@@ -18,13 +18,14 @@ interface DatePickerProps {
   className?: string
 }
 
-export function DatePicker({ 
-  value, 
-  onChange, 
+export function DatePicker({
+  value,
+  onChange,
   placeholder = 'Pick a date',
-  className 
+  className
 }: DatePickerProps) {
   const [internalDate, setInternalDate] = React.useState<Date>()
+  const [open, setOpen] = React.useState(false)
   const dateValue = value ? new Date(value) : internalDate
 
   const handleSelect = (date: Date | undefined) => {
@@ -33,11 +34,13 @@ export function DatePicker({
     } else {
       setInternalDate(date)
     }
+    // Close the popover after selecting a date
+    setOpen(false)
   }
 
   return (
     <div className="h-12">
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={
             <Button
