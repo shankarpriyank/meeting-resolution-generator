@@ -1,14 +1,18 @@
 'use client';
 
-import React, { useState } from 'react'
-import ResolutionPreviewNavbar from './resolution-preview/navbar'
-import ResolutionPreviewContent from './resolution-preview/content'
-import ResolutionPreviewFooter from './resolution-preview/footer'
+import React, { useState } from 'react';
+import ResolutionPreviewNavbar from './resolution-preview/navbar';
+import ResolutionPreviewContent from './resolution-preview/content';
+import ResolutionPreviewFooter from './resolution-preview/footer';
 
-import MeetingRecordingContent from './meeting-recording/content'
-import MeetingRecordingNavbar from './meeting-recording/navbar'
-import MeetingRecordingFooter from './meeting-recording/footer'
+import MeetingRecordingContent from './meeting-recording/content';
+import MeetingRecordingNavbar from './meeting-recording/navbar';
+import MeetingRecordingFooter from './meeting-recording/footer';
 import { generatePdf } from '@/lib/api/pdf';
+import {
+    StageIndicator,
+    type ProcessingStage,
+} from '@/components/ui/stage-indicator';
 
 // Helper function to generate HTML from resolution data
 interface ResolutionData {
@@ -40,7 +44,7 @@ const generateResolutionHTML = (data: ResolutionData): string => {
                 <p class="text-lg mb-1">${data.entityName || 'Entity Name'}</p>
                 <p class="text-sm text-gray-400">${data.meetingDate || 'Date'}</p>
             </div>
-            
+
             <div class="border-t border-b border-gray-700 py-4 mb-6">
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
@@ -53,7 +57,9 @@ const generateResolutionHTML = (data: ResolutionData): string => {
                 </div>
             </div>
 
-            ${data.directors && data.directors.length > 0 ? `
+            ${
+                data.directors && data.directors.length > 0
+                    ? `
             <div class="mb-6">
                 <table class="w-full border-collapse">
                     <thead>
@@ -63,18 +69,26 @@ const generateResolutionHTML = (data: ResolutionData): string => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${data.directors.map(d => `
+                        ${data.directors
+                            .map(
+                                (d) => `
                             <tr class="border-b border-gray-800">
                                 <td class="py-2">${d.name}</td>
                                 <td class="py-2">${d.position}</td>
                             </tr>
-                        `).join('')}
+                        `
+                            )
+                            .join('')}
                     </tbody>
                 </table>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${data.attendees && data.attendees.length > 0 ? `
+            ${
+                data.attendees && data.attendees.length > 0
+                    ? `
             <div class="mb-6">
                 <table class="w-full border-collapse">
                     <thead>
@@ -84,75 +98,117 @@ const generateResolutionHTML = (data: ResolutionData): string => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${data.attendees.map(a => `
+                        ${data.attendees
+                            .map(
+                                (a) => `
                             <tr class="border-b border-gray-800">
                                 <td class="py-2">${a.name}</td>
                                 <td class="py-2">${a.company}</td>
                             </tr>
-                        `).join('')}
+                        `
+                            )
+                            .join('')}
                     </tbody>
                 </table>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${data.chairperson ? `
+            ${
+                data.chairperson
+                    ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">1. Chairperson</h3>
                 <p>It was agreed that ${data.chairperson} would Chair the meeting.</p>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${data.quorumNoted ? `
+            ${
+                data.quorumNoted
+                    ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">2. Quorum</h3>
                 <p>${data.quorumNoted}</p>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${data.disclosureOfInterest ? `
+            ${
+                data.disclosureOfInterest
+                    ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">3. Disclosure of Interest</h3>
                 <p>${data.disclosureOfInterest}</p>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${data.businessPurpose ? `
+            ${
+                data.businessPurpose
+                    ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">4. Business of the meeting</h3>
                 <p>The Chairperson reported that the purpose of the meeting was to consider and, if deemed fit:</p>
                 <p class="mt-2">${data.businessPurpose}</p>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${data.agreementType ? `
+            ${
+                data.agreementType
+                    ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">5. Approval of Agreement</h3>
                 <p class="mb-2">5.1 The following documents were produced to the meeting:</p>
                 <p class="ml-4">A draft of the ${data.agreementType}${data.counterpartyName ? ` with ${data.counterpartyName}` : ''}.</p>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${data.resolutions && data.resolutions.length > 0 ? `
+            ${
+                data.resolutions && data.resolutions.length > 0
+                    ? `
             <div class="mb-6">
-                ${data.resolutions.map(r => `
+                ${data.resolutions
+                    .map(
+                        (r) => `
                     <p class="mb-4"><strong>${r.section}</strong> ${r.text}</p>
-                `).join('')}
+                `
+                    )
+                    .join('')}
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${data.filingInstructions ? `
+            ${
+                data.filingInstructions
+                    ? `
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">7. Filing</h3>
                 <p>${data.filingInstructions}</p>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
-            ${data.closingStatement ? `
+            ${
+                data.closingStatement
+                    ? `
             <div class="mb-8">
                 <h3 class="font-semibold mb-2">8. Close</h3>
                 <p>${data.closingStatement}</p>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
             <div class="mt-12 pt-6 border-t border-gray-700">
                 <div class="grid grid-cols-2 gap-8">
@@ -199,6 +255,12 @@ interface ResolutionViewProps {
         date?: string;
         time?: string;
     };
+
+    // Processing stage props
+    processingStage?: ProcessingStage;
+    processingError?: string | null;
+    onRetry?: () => void;
+    isLoading?: boolean;
 }
 
 const ResolutionView = ({
@@ -218,14 +280,22 @@ const ResolutionView = ({
     onAddAnother,
     meetingStatus = 'DRAFT',
     metadata,
+    processingStage = 'idle',
+    processingError = null,
+    onRetry,
+    isLoading = false,
 }: ResolutionViewProps) => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
     // Determine status for resolution preview navbar
     const getResolutionStatus = () => {
-        if (isTranscribing) return { status: 'Transcribing...', color: 'info' as const };
-        if (isGeneratingResolution) return { status: 'Generating...', color: 'success' as const };
+        if (processingStage === 'error')
+            return { status: 'Error', color: 'error' as const };
+        if (isTranscribing)
+            return { status: 'Transcribing...', color: 'info' as const };
+        if (isGeneratingResolution)
+            return { status: 'Generating...', color: 'success' as const };
         if (resolution) return { status: 'Complete', color: 'success' as const };
         return { status: undefined, color: 'info' as const };
     };
@@ -272,7 +342,10 @@ const ResolutionView = ({
 
             try {
                 const parsed = JSON.parse(resolution);
-                title = parsed.resolutionTitle || parsed.documentTitle || 'Resolution Document';
+                title =
+                    parsed.resolutionTitle ||
+                    parsed.documentTitle ||
+                    'Resolution Document';
 
                 // Use _html if available (edited content), otherwise generate from data
                 if (parsed._html) {
@@ -324,14 +397,25 @@ const ResolutionView = ({
                 />
             </div>
             <div className="col-span-1">
-                <ResolutionPreviewNavbar
-                    status={status}
-                    statusColor={color}
-                />
+                <ResolutionPreviewNavbar status={status} statusColor={color}>
+                    {/* Stage indicator in navbar */}
+                    {processingStage !== 'idle' &&
+                        processingStage !== 'complete' &&
+                        processingStage !== 'error' && (
+                            <StageIndicator
+                                currentStage={processingStage}
+                                variant="compact"
+                                className="ml-4"
+                            />
+                        )}
+                </ResolutionPreviewNavbar>
                 <ResolutionPreviewContent
                     resolution={resolution}
                     isGenerating={isGeneratingResolution}
                     isTranscribing={isTranscribing}
+                    isLoading={isLoading}
+                    error={processingError}
+                    onRetry={onRetry}
                     onEdit={onEdit}
                     isEditMode={isEditMode}
                     onSaveEdit={handleSaveEdit}
@@ -351,7 +435,7 @@ const ResolutionView = ({
                 />
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default ResolutionView
+export default ResolutionView;

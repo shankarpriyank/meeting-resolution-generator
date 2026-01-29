@@ -6,11 +6,16 @@ import type { MeetingMetadata } from '@/lib/api/meetings';
 import { useAudio } from './use-audio';
 import { useTranscription } from './use-transcription';
 import { useResolution } from './use-resolution';
+import type { ProcessingStage } from '@/components/ui/stage-indicator';
 
 export interface UseMeetingWorkflowReturn {
     // Audio state
     audioFile: File | null;
     audioUrl: string | null;
+
+    // Transcript file state
+    transcriptFile: File | null;
+    setTranscriptFile: (file: File | null) => void;
 
     // Transcription state
     isTranscribing: boolean;
@@ -29,10 +34,15 @@ export interface UseMeetingWorkflowReturn {
     isLoadingMeetingData: boolean;
     meetingMetadata: MeetingMetadata;
 
+    // Processing stage
+    processingStage: ProcessingStage;
+    processingError: string | null;
+
     // Actions
     setAudioFile: (file: File | null) => void;
     setMeetingMetadata: (metadata: MeetingMetadata) => void;
     handleProcessMeeting: () => Promise<void>;
+    handleTranscriptUpload: (file: File) => Promise<void>;
     handleGenerateResolution: (
         transcriptionText?: string,
         fileLinkOverride?: string | null
@@ -49,6 +59,7 @@ export interface UseMeetingWorkflowReturn {
         meetingTitle: string;
     }) => void;
     formatDate: (date: string, time?: string) => string;
+    retryLastOperation: () => Promise<void>;
 }
 
 /**
@@ -64,6 +75,14 @@ export function useMeetingWorkflow(
     const audio = useAudio();
     const transcription = useTranscription();
     const resolution = useResolution();
+
+    // Processing stage state
+    const [processingStage, setProcessingStage] = useState<ProcessingStage>('idle');
+    const [processingError, setProcessingError] = useState<string | null>(null);
+    const [lastOperation, setLastOperation] = useState<(() => Promise<void>) | null>(null);
+
+    // Transcript file state (for direct transcript uploads)
+    const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
 
     // Meeting-specific state
     const [meetingState, setMeetingState] = useState<{
@@ -131,9 +150,10 @@ export function useMeetingWorkflow(
                 }));
             }
 
-            // If resolution exists, show preview
+            // If resolution exists, show preview and set stage to complete
             if (meeting.resolution_html || meeting.resolution) {
                 resolution.setShowResolutionPreview(true);
+                setProcessingStage('complete');
             }
 
             setMeetingState((prev) => ({ ...prev, id }));
@@ -145,37 +165,105 @@ export function useMeetingWorkflow(
 
     const handleProcessMeeting = async () => {
         setMeetingState((prev) => ({ ...prev, isProcessing: true }));
+        setProcessingError(null);
+        setLastOperation(() => handleProcessMeeting);
+
+        // Handle transcript file upload (skip audio processing)
+        if (transcriptFile) {
+            await handleTranscriptUpload(transcriptFile);
+            return;
+        }
 
         if (!audio.audioFile) {
-            toast.warning('Please upload an audio file first');
+            toast.warning('Please upload an audio or transcript file first');
             setMeetingState((prev) => ({ ...prev, isProcessing: false }));
             return;
         }
-
-        // Upload audio file
-        const uploadedUrl = await audio.uploadAudio(audio.audioFile);
-        if (!uploadedUrl) {
-            setMeetingState((prev) => ({ ...prev, isProcessing: false }));
-            return;
-        }
-
-        resolution.setShowResolutionPreview(true);
-        setMeetingState((prev) => ({ ...prev, isProcessing: false }));
 
         try {
-            // Transcribe audio
+            // Stage 1: Upload
+            setProcessingStage('uploading');
+            toast.info('Uploading audio file...');
+            const uploadedUrl = await audio.uploadAudio(audio.audioFile);
+            if (!uploadedUrl) {
+                throw new Error('Failed to upload audio file');
+            }
+            toast.success('Upload complete');
+
+            resolution.setShowResolutionPreview(true);
+            setMeetingState((prev) => ({ ...prev, isProcessing: false }));
+
+            // Stage 2: Transcribe
+            setProcessingStage('transcribing');
+            toast.info('Transcribing audio...');
             const transcribedText = await transcription.transcribeAudio(
                 audio.audioFile
             );
+            toast.success('Transcription complete');
 
-            // Automatically generate resolution after transcription completes
+            // Stage 3: Analyze (brief stage before generation)
+            setProcessingStage('analyzing');
+
+            // Stage 4: Generate resolution
+            setProcessingStage('generating');
+            toast.info('Generating resolution...');
             await generateResolutionInternal(transcribedText, uploadedUrl);
+
+            // Stage 5: Complete
+            setProcessingStage('complete');
+            toast.success('Resolution generated successfully!');
         } catch (error) {
             console.error('Processing error:', error);
+            setProcessingStage('error');
+            setProcessingError(error instanceof Error ? error.message : 'Unknown error');
             transcription.setTranscription(
                 'Error: Failed to transcribe audio. Please try again.'
             );
-            toast.error('Failed to transcribe audio');
+            toast.error('Failed to process meeting');
+            setMeetingState((prev) => ({ ...prev, isProcessing: false }));
+        }
+    };
+
+    /**
+     * Handle transcript file upload (skip transcription step)
+     */
+    const handleTranscriptUpload = async (file: File) => {
+        setMeetingState((prev) => ({ ...prev, isProcessing: true }));
+        setProcessingError(null);
+        setLastOperation(() => () => handleTranscriptUpload(file));
+
+        try {
+            // Import transcript parser dynamically
+            const { parseTranscriptFile } = await import('@/lib/utils/transcript-parser');
+
+            // Stage 1: Parse transcript file
+            setProcessingStage('uploading');
+            toast.info('Processing transcript file...');
+
+            const transcriptText = await parseTranscriptFile(file);
+            transcription.setTranscription(transcriptText);
+            toast.success('Transcript loaded');
+
+            resolution.setShowResolutionPreview(true);
+
+            // Skip transcribing stage - go directly to analyzing
+            setProcessingStage('analyzing');
+
+            // Stage 2: Generate resolution
+            setProcessingStage('generating');
+            toast.info('Generating resolution...');
+            await generateResolutionInternal(transcriptText, null);
+
+            // Stage 3: Complete
+            setProcessingStage('complete');
+            toast.success('Resolution generated successfully!');
+        } catch (error) {
+            console.error('Transcript upload error:', error);
+            setProcessingStage('error');
+            setProcessingError(error instanceof Error ? error.message : 'Failed to parse transcript');
+            toast.error('Failed to process transcript file');
+        } finally {
+            setMeetingState((prev) => ({ ...prev, isProcessing: false }));
         }
     };
 
@@ -260,9 +348,9 @@ export function useMeetingWorkflow(
 
                     // If no HTML stored, generate it from the data
                     if (!resolutionHtml && parsed.entityName) {
-                        resolutionHtml = convertToHTML(parsed);
+                        resolutionHtml = convertToHTML(parsed, meetingMetadata.jurisdiction);
                     } else if (!resolutionHtml) {
-                        resolutionHtml = convertToHTML(parsed);
+                        resolutionHtml = convertToHTML(parsed, meetingMetadata.jurisdiction);
                     }
                 } catch {
                     // If parsing fails, assume it's already HTML
@@ -303,6 +391,8 @@ export function useMeetingWorkflow(
         resolution.reset();
         transcription.reset();
         audio.reset();
+        setProcessingStage('idle');
+        setProcessingError(null);
     };
 
     const handleMetadataSubmit = (metadata: {
@@ -338,10 +428,24 @@ export function useMeetingWorkflow(
         }
     }, []);
 
+    /**
+     * Retry the last failed operation
+     */
+    const retryLastOperation = async () => {
+        if (lastOperation) {
+            setProcessingError(null);
+            await lastOperation();
+        }
+    };
+
     return {
         // Audio state
         audioFile: audio.audioFile,
         audioUrl: audio.audioUrl,
+
+        // Transcript file state
+        transcriptFile,
+        setTranscriptFile,
 
         // Transcription state
         isTranscribing: transcription.isTranscribing,
@@ -360,16 +464,22 @@ export function useMeetingWorkflow(
         isLoadingMeetingData: meetingState.isLoading,
         meetingMetadata,
 
+        // Processing stage
+        processingStage,
+        processingError,
+
         // Actions
         setAudioFile: audio.setAudioFile,
         setMeetingMetadata,
         handleProcessMeeting,
+        handleTranscriptUpload,
         handleGenerateResolution: generateResolutionInternal,
         handleEditResolution,
         handleAcceptResolution,
         handleGenerateAnother,
         handleMetadataSubmit,
         formatDate,
+        retryLastOperation,
     };
 }
 

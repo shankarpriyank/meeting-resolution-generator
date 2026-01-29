@@ -8,7 +8,7 @@ import {
 } from '@/lib/rate-limiter';
 import { recordAPICall, calculateCost } from '@/lib/api-monitoring';
 import {
-  RESOLUTION_SYSTEM_PROMPT,
+  buildSystemPrompt,
   buildResolutionPrompt,
 } from '@/lib/prompts/resolution-prompt';
 
@@ -53,16 +53,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = buildResolutionPrompt(metadata, transcription);
+    // Build dynamic prompts based on jurisdiction
+    const jurisdiction = metadata?.jurisdiction || 'Ireland';
+    const systemPrompt = buildSystemPrompt(jurisdiction);
+    const userPrompt = buildResolutionPrompt(metadata || {}, transcription);
 
     const message = await anthropic.messages.create({
       model: 'claude-3-5-haiku-latest',
       max_tokens: 4096,
-      system: RESOLUTION_SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [
         {
           role: 'user',
-          content: prompt,
+          content: userPrompt,
         },
       ],
     });
@@ -90,6 +93,7 @@ export async function POST(request: NextRequest) {
       output_tokens: outputTokens,
       estimated_cost: estimatedCost,
       client_ip: clientIp,
+      metadata: { jurisdiction },
     });
 
     console.log('Generated Resolution Text:', resolutionText);

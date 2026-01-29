@@ -17,7 +17,7 @@ describe('resolution-html convertToHTML', () => {
     const data = {};
 
     const html = convertToHTML(data);
-    expect(html).toContain('[To be determined]');
+    expect(html).toContain('[To be confirmed]');
   });
 
   it('should render meeting location and time', () => {
@@ -31,7 +31,8 @@ describe('resolution-html convertToHTML', () => {
     const html = convertToHTML(data);
     expect(html).toContain('Board Room A');
     expect(html).toContain('10:00 AM');
-    expect(html).toContain('Board Meeting');
+    // Meeting type is shown in the header
+    expect(html).toContain('BOARD MEETING');
   });
 
   it('should render directors table when directors are provided', () => {
@@ -197,7 +198,8 @@ describe('resolution-html convertToHTML', () => {
     };
 
     const html = convertToHTML(data);
-    expect(html).toContain('Secretary Signature');
+    // The new format uses "Chairperson" instead of "Secretary Signature"
+    expect(html).toContain('Chairperson');
     expect(html).toContain('Date');
   });
 

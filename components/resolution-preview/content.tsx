@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ResolutionSkeleton } from '@/components/ui/skeleton';
+import { ErrorState, ERROR_MESSAGES } from '@/components/ui/error-state';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExtension from '@tiptap/extension-underline';
@@ -19,7 +21,10 @@ interface ResolutionPreviewContentProps {
     resolution?: string | ResolutionData;
     isGenerating?: boolean;
     isTranscribing?: boolean;
+    isLoading?: boolean;
+    error?: string | null;
     onEdit?: (editedResolution: string) => void;
+    onRetry?: () => void;
     isEditMode?: boolean;
     onSaveEdit?: (editedContent?: string) => void;
     onCancelEdit?: () => void;
@@ -35,12 +40,13 @@ const ResolutionPreviewContent = ({
     resolution = '',
     isGenerating = false,
     isTranscribing = false,
-    onEdit,
+    isLoading = false,
+    error = null,
+    onRetry,
     isEditMode = false,
     onSaveEdit,
     onCancelEdit,
 }: ResolutionPreviewContentProps) => {
-    const [resolutionData, setResolutionData] = useState<ResolutionData>({});
     const [originalContent, setOriginalContent] = useState('');
     const [hasChanges, setHasChanges] = useState(false);
 
@@ -77,7 +83,7 @@ const ResolutionPreviewContent = ({
 
         editor.commands.setContent(resolution);
         setOriginalContent(resolution as string);
-        
+
     }, [resolution, editor]);
 
     // Update editor editable state when edit mode changes
@@ -91,7 +97,7 @@ const ResolutionPreviewContent = ({
 
             setOriginalContent(html);
             setHasChanges(false);
-            
+
             // Pass edited content to parent
             onSaveEdit?.(html);
         } else {
@@ -107,6 +113,32 @@ const ResolutionPreviewContent = ({
         onCancelEdit?.();
     };
 
+    // Show error state
+    if (error) {
+        return (
+            <div className="bg-[#0A0A0A] h-[calc(100vh-180px)] flex flex-col items-center justify-center p-8">
+                <ErrorState
+                    title={ERROR_MESSAGES.RESOLUTION_FAILED.title}
+                    message={error}
+                    onRetry={onRetry}
+                />
+            </div>
+        );
+    }
+
+    // Show skeleton while loading initial data
+    if (isLoading && !resolution && !isGenerating && !isTranscribing) {
+        return (
+            <div className="bg-[#0A0A0A] h-[calc(100vh-180px)] overflow-y-auto">
+                <div className="max-w-4xl mx-auto p-2">
+                    <div className="bg-[#1A1A1A] rounded-lg border border-[#2A2A2A] shadow-xl">
+                        <ResolutionSkeleton />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (isTranscribing && !resolution) {
         return (
             <div className="bg-[#0A0A0A] h-[calc(100vh-180px)] flex flex-col items-center justify-center gap-4">
@@ -119,19 +151,15 @@ const ResolutionPreviewContent = ({
     if (isGenerating) {
         return (
             <div className="bg-[#0A0A0A] h-[calc(100vh-180px)] flex flex-col items-center justify-center gap-4">
-                <Loader2 className="h-8 w-8 animate-spin text-[#22C55E]" />
+                <div className="relative">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#22C55E]" />
+                    <div className="absolute inset-0 h-8 w-8 animate-ping opacity-20 rounded-full bg-[#22C55E]" />
+                </div>
                 <p className="text-sm text-[#8A8A8A]">Generating resolution...</p>
+                <p className="text-xs text-[#6A6A6A]">This may take a few moments</p>
             </div>
         );
     }
-
-    // if (!resolution) {
-    //     return (
-    //         <div className="bg-[#0A0A0A] h-[calc(100vh-180px)] flex flex-col items-center justify-center">
-    //             <p className="text-sm text-[#8A8A8A]">No resolution available yet.</p>
-    //         </div>
-    //     );
-    // }
 
     return (
         <div className="bg-[#0A0A0A] h-[calc(100vh-180px)] flex flex-col">
