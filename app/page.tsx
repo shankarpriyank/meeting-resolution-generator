@@ -1,4 +1,3 @@
-import { ComponentExample } from "@/components/component-example";
 import { ActiveMeetings } from "@/components/meeting-capture-home/meetings";
 import MeetingCaptureHomeNavbar from "@/components/meeting-capture-home/navbar";
 

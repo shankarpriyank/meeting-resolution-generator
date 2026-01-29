@@ -11,7 +11,7 @@ import { AudioUpload } from '@/components/meeting-capture-home/upload';
 import { MeetingMetadataForm } from '@/components/meeting-capture-home/meeting-metadata-form';
 import { ConnectPlatform } from '@/components/meeting-capture-home/connect-platform';
 import ResolutionView from '@/components/resolution-view';
-import { useTranscribe } from '@/hooks/use-transcribe';
+import { useMeetingWorkflow } from '@/hooks/use-meeting-workflow';
 
 function TranscribePageContent() {
     const searchParams = useSearchParams();
@@ -20,6 +20,8 @@ function TranscribePageContent() {
     const {
         audioFile,
         audioUrl,
+        transcriptFile,
+        setTranscriptFile,
         isTranscribing,
         transcriptionProgress,
         transcription,
@@ -37,7 +39,7 @@ function TranscribePageContent() {
         handleGenerateAnother,
         handleMetadataSubmit,
         formatDate,
-    } = useTranscribe(meetingId);
+    } = useMeetingWorkflow(meetingId);
 
     if (isLoadingMeetingData) {
         return (
@@ -75,6 +77,7 @@ function TranscribePageContent() {
                             <Card className="p-8 bg-[#151515] border border-[#2A2A2A] rounded-sm">
                                 <AudioUpload
                                     onUpload={setAudioFile}
+                                    onTranscriptUpload={setTranscriptFile}
                                     isTranscribing={isTranscribing}
                                     audioFile={audioFile}
                                 />
@@ -94,7 +97,7 @@ function TranscribePageContent() {
                             <Button
                                 onClick={handleProcessMeeting}
                                 size="lg"
-                                disabled={!audioFile || !meetingMetadata.entityName || !meetingMetadata.meetingType || !meetingMetadata.meetingTitle || !meetingMetadata.date || isProcessingMeeting}
+                                disabled={(!audioFile && !transcriptFile) || !meetingMetadata.entityName || !meetingMetadata.meetingType || !meetingMetadata.meetingTitle || !meetingMetadata.date || isProcessingMeeting}
                                 className="px-8 py-8 cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isProcessingMeeting ? (

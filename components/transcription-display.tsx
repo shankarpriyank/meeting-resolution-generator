@@ -2,14 +2,24 @@
 
 import { useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { TranscriptionSkeleton } from '@/components/ui/skeleton';
+import { ErrorState, ERROR_MESSAGES } from '@/components/ui/error-state';
 
 interface TranscriptionDisplayProps {
   transcription: string;
   isTranscribing: boolean;
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
-export function   TranscriptionDisplay({ transcription, isTranscribing }: TranscriptionDisplayProps) {
+export function TranscriptionDisplay({
+  transcription,
+  isTranscribing,
+  isLoading = false,
+  error = null,
+  onRetry,
+}: TranscriptionDisplayProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,7 +32,7 @@ export function   TranscriptionDisplay({ transcription, isTranscribing }: Transc
     // Split by timestamp pattern [HH:MM:SS]
     const parts = text.split(/(\[\d{2}:\d{2}:\d{2}\])/g);
     const formatted = [];
-    
+
     for (let i = 0; i < parts.length; i++) {
       if (parts[i].match(/\[\d{2}:\d{2}:\d{2}\]/)) {
         formatted.push({
@@ -32,11 +42,30 @@ export function   TranscriptionDisplay({ transcription, isTranscribing }: Transc
         i++; // Skip the next part as we've already used it
       }
     }
-    
+
     return formatted;
   };
 
   const formattedTranscription = formatTranscription(transcription);
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <ErrorState
+          title={ERROR_MESSAGES.TRANSCRIPTION_FAILED.title}
+          message={error}
+          onRetry={onRetry}
+          variant="inline"
+        />
+      </div>
+    );
+  }
+
+  // Show skeleton loader while loading
+  if (isLoading && !transcription && !isTranscribing) {
+    return <TranscriptionSkeleton />;
+  }
 
   return (
     <div className="space-y-4">
@@ -47,15 +76,14 @@ export function   TranscriptionDisplay({ transcription, isTranscribing }: Transc
         </div>
       ) : (
         <>
-
-          <div 
-            ref={scrollRef}
-            className="space-y-4 p-4 rounded-lg border"
-          >
+          <div ref={scrollRef} className="space-y-4 p-4 rounded-lg border">
             {formattedTranscription.map((item, index) => (
               <div key={index} className="space-y-1">
                 <div className="flex items-start gap-3">
-                  <Badge variant="secondary" className="font-mono text-xs shrink-0">
+                  <Badge
+                    variant="secondary"
+                    className="font-mono text-xs shrink-0"
+                  >
                     {item.timestamp.replace('[', '').replace(']', '')}
                   </Badge>
                   <p className="text-sm leading-relaxed flex-1 text-white whitespace-pre-wrap">
@@ -64,15 +92,21 @@ export function   TranscriptionDisplay({ transcription, isTranscribing }: Transc
                 </div>
               </div>
             ))}
-            
+
             {isTranscribing && (
               <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                <div className="h-2 w-2 bg-current rounded-full animate-bounce" 
-                     style={{ animationDelay: '0ms' }} />
-                <div className="h-2 w-2 bg-current rounded-full animate-bounce" 
-                     style={{ animationDelay: '150ms' }} />
-                <div className="h-2 w-2 bg-current rounded-full animate-bounce" 
-                     style={{ animationDelay: '300ms' }} />
+                <div
+                  className="h-2 w-2 bg-current rounded-full animate-bounce"
+                  style={{ animationDelay: '0ms' }}
+                />
+                <div
+                  className="h-2 w-2 bg-current rounded-full animate-bounce"
+                  style={{ animationDelay: '150ms' }}
+                />
+                <div
+                  className="h-2 w-2 bg-current rounded-full animate-bounce"
+                  style={{ animationDelay: '300ms' }}
+                />
               </div>
             )}
           </div>

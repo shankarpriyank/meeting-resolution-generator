@@ -1,8 +1,11 @@
 'use client';
 
+import React from 'react';
+
 interface ResolutionPreviewNavbarProps {
   status?: string;
   statusColor?: 'success' | 'info' | 'warning' | 'error';
+  children?: React.ReactNode;
 }
 
 const statusColorStyles = {
@@ -32,9 +35,10 @@ const statusColorStyles = {
   },
 };
 
-const ResolutionPreviewNavbar = ({ 
-  status, 
-  statusColor = 'success' 
+const ResolutionPreviewNavbar = ({
+  status,
+  statusColor = 'success',
+  children,
 }: ResolutionPreviewNavbarProps) => {
   const styles = statusColorStyles[statusColor];
 
@@ -49,12 +53,19 @@ const ResolutionPreviewNavbar = ({
             AI-generated resolution from meeting audio
           </p>
         </div>
-        {status && (
-          <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 border ${styles.bg} ${styles.border}`}>
-            <div className={`w-2 h-2 rounded-full ${styles.dot}`} />
-            <span className={`text-sm font-medium ${styles.text}`}>{status}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {children}
+          {status && (
+            <div
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 border ${styles.bg} ${styles.border}`}
+            >
+              <div className={`w-2 h-2 rounded-full ${styles.dot}`} />
+              <span className={`text-sm font-medium ${styles.text}`}>
+                {status}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
