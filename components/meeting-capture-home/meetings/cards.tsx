@@ -90,7 +90,7 @@ export function MeetingCard({ meeting, onActionClick }: MeetingCardProps) {
         <Button
           type="button"
           onClick={() => onActionClick?.(meeting.id)}
-          className={`rounded-lg px-6 py-2 ${
+          className={`cursor-pointer rounded-lg px-6 py-2 ${
             meeting.actionButton.variant === 'primary'
               ? 'bg-white text-[#1A1A1A] hover:bg-gray-200'
               : 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border border-gray-600'
